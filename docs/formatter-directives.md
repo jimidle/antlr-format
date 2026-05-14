@@ -87,7 +87,8 @@ Resets the active formatter options to the built-in defaults.
 
 ## Option reference
 
-The following table lists every inline option currently recognized by the formatter.
+The following table is intended to be exhaustive for inline `// $antlr-format ...` directives recognized by the formatter.
+The only `FormattingOptions` field intentionally excluded from the table is `disabled`, which is API-only and documented separately in the caveats section below.
 
 | Option | Type / accepted values | Default | Notes |
 | --- | --- | --- | --- |
