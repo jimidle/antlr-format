@@ -1,8 +1,24 @@
 # Maven Central publication
 
-This project is prepared for publication to Sonatype Central under the `ws.idle` namespace.
-The repository now includes the metadata and Maven profile needed for a Central release, but the
-account and namespace-verification steps still need to be completed in the Central Portal.
+This project is published to Sonatype Central under the `ws.idle` namespace.
+The `ws.idle` namespace is already verified, the Maven publishing setup is active, and release `1.0.1`
+is live in Central.
+
+## Current published coordinates
+
+The current published release is:
+
+- `ws.idle:antlr-format-parent:1.0.1`
+- `ws.idle:antlr-format-core:1.0.1`
+- `ws.idle:antlr-format-maven-plugin:1.0.1`
+- `ws.idle:antlr-format-cli:1.0.1`
+
+Useful Central pages:
+
+- parent: <https://central.sonatype.com/artifact/ws.idle/antlr-format-parent>
+- core: <https://central.sonatype.com/artifact/ws.idle/antlr-format-core>
+- Maven plugin: <https://central.sonatype.com/artifact/ws.idle/antlr-format-maven-plugin>
+- CLI: <https://central.sonatype.com/artifact/ws.idle/antlr-format-cli>
 
 ## What the build is already configured to provide
 
@@ -18,16 +34,7 @@ The parent POM and published modules now provide the Maven Central prerequisites
 
 The profile is defined in the parent `pom.xml` and applies across the full reactor.
 
-## Current artifact coordinates
-
-The project is prepared to publish these coordinates:
-
-- `ws.idle:antlr-format-parent:1.0.1`
-- `ws.idle:antlr-format-core:1.0.1`
-- `ws.idle:antlr-format-maven-plugin:1.0.1`
-- `ws.idle:antlr-format-cli:1.0.1`
-
-## What cannot currently be completed fully from the command line
+## What still cannot be completed fully from the command line
 
 Based on Sonatype's current Central documentation:
 
@@ -38,7 +45,13 @@ Based on Sonatype's current Central documentation:
 After the account, namespace, and user token exist, publishing itself can be driven from Maven on
 the command line.
 
-## Publisher registration checklist
+For this repository, those initial portal steps have already been completed successfully. The rest of
+this guide is kept as release-maintenance documentation for future publishers and future machines.
+
+## Initial publisher registration checklist
+
+These steps are already complete for `ws.idle`, but they are the steps you would repeat if you ever
+needed to recreate publisher access from scratch.
 
 ### 1. Create or confirm a Central account
 
@@ -182,15 +195,25 @@ publish with:
 mvn -B --no-transfer-progress -Pcentral-publish deploy
 ```
 
+For the fully automated publication flow used for release `1.0.1`, run:
+
+```bash
+mvn -B --no-transfer-progress \
+  -Pcentral-publish \
+  -Dcentral.auto.publish=true \
+  -DwaitUntil=PUBLISHED \
+  deploy
+```
+
 By default, this project leaves Sonatype publishing in manual mode after upload/validation so you
 can perform a last inspection in the Central Portal.
 
 If you later decide to make CI releases fully automatic, the parent POM property
 `central.auto.publish` can be set to `true`.
 
-## Suggested first release workflow
+## Suggested release workflow
 
-For the first Central release, use this order:
+For future Central releases, use this order:
 
 1. verify the namespace in the Central Portal
 2. generate a user token
@@ -207,7 +230,7 @@ mvn -B --no-transfer-progress -Pcentral-publish verify
 mvn -B --no-transfer-progress -Pcentral-publish deploy
 ```
 
-6. inspect the deployment in the Central Portal and publish it if everything looks correct
+6. if you are not using automatic publish, inspect the deployment in the Central Portal and publish it there
 
 ## Related documentation
 
