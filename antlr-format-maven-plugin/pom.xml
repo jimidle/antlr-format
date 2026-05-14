@@ -14,6 +14,7 @@
     <artifactId>antlr-format-maven-plugin</artifactId>
     <name>ANTLR Formatter Maven Plugin</name>
     <packaging>maven-plugin</packaging>
+    <description>Maven plugin that formats ANTLR grammar files in place using the shared formatter engine.</description>
 
     <dependencies>
         <dependency>
@@ -53,6 +54,30 @@
                         <id>default-descriptor</id>
                         <goals>
                             <goal>descriptor</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
                         </goals>
                     </execution>
                 </executions>
