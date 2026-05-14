@@ -53,5 +53,16 @@ class GrammarFormatterSmokeTest {
 
         assertEquals(fromText.text(), fromTokens.text());
     }
+
+    @Test
+    void bareFormatterDirectiveCommentDoesNotCrashFormatting() {
+        String grammar = "grammar Demo;\n// $antlr-format\na: 'a';\n";
+
+        FormattingResult result = new GrammarFormatter(grammar).formatGrammar(new FormattingOptions());
+
+        assertTrue(result.text().contains("// $antlr-format"));
+        assertTrue(result.text().contains("grammar Demo;"));
+        assertTrue(result.text().contains("a"));
+    }
 }
 
