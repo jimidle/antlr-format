@@ -14,6 +14,11 @@ mvn -q test
 mvn -q -pl antlr-format-maven-plugin -am package
 ```
 
+## Contributing
+
+This repository uses protected `main`, short-lived feature branches, and pull requests.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the branch naming convention and CLI workflow.
+
 Example plugin usage in a project:
 
 ```xml
