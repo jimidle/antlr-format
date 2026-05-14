@@ -20,10 +20,7 @@ public final class FormatterRunner {
         Path input = Path.of(args[0]);
         String grammar = Files.readString(input, StandardCharsets.UTF_8);
 
-        FormattingConfiguration config = new FormattingConfiguration();
-        config.main = new FormattingOptions();
-
-        FormattingResult result = new AntlrFormatterService().format(grammar, config, false, 0, Integer.MAX_VALUE);
+        FormattingResult result = new GrammarFormatter(grammar).formatGrammar(new FormattingOptions());
         System.out.print(result.text());
     }
 }

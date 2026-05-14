@@ -28,7 +28,7 @@ final class FormattingTestSupport {
             return options;
         }
 
-        node.fields().forEachRemaining(entry -> {
+        node.properties().forEach(entry -> {
             String key = entry.getKey();
             JsonNode value = entry.getValue();
             switch (key) {

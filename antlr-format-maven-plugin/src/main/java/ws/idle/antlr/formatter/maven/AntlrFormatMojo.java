@@ -75,7 +75,7 @@ public class AntlrFormatMojo extends AbstractMojo {
             return;
         }
 
-        Charset charset = Charset.forName(encoding == null ? StandardCharsets.UTF_8.name() : encoding);
+        Charset charset = resolveCharset(encoding);
 
         FormattingConfiguration configuration = new FormattingConfiguration();
         configuration.main = main == null ? new FormattingOptions() : main;
@@ -146,6 +146,15 @@ public class AntlrFormatMojo extends AbstractMojo {
 
         result.sort(Comparator.comparing(Path::toString));
         return result;
+    }
+
+    private static Charset resolveCharset(String encoding) throws MojoExecutionException {
+        String charsetName = encoding == null ? StandardCharsets.UTF_8.name() : encoding;
+        try {
+            return Charset.forName(charsetName);
+        } catch (IllegalArgumentException e) {
+            throw new MojoExecutionException("Unsupported encoding configured for antlr-format: " + charsetName, e);
+        }
     }
 }
 

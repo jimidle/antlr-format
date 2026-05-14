@@ -3,7 +3,10 @@ package ws.idle.antlr.formatter;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.junit.jupiter.api.Test;
+import ws.idle.antlr.formatter.lexer.ANTLRv4Lexer;
 
 class GrammarFormatterSmokeTest {
 
@@ -35,6 +38,20 @@ class GrammarFormatterSmokeTest {
         assertTrue(comment.contains("$antlr-format"));
         assertTrue(comment.contains("columnLimit 150"));
         assertTrue(comment.contains("alignLabels true"));
+    }
+
+    @Test
+    void supportsTokenStreamConstructorAndConvenienceOverload() {
+        String grammar = "grammar Demo;\na: 'a';\n";
+        ANTLRv4Lexer lexer = new ANTLRv4Lexer(CharStreams.fromString(grammar));
+        CommonTokenStream tokenStream = new CommonTokenStream(lexer);
+        tokenStream.fill();
+
+        FormattingOptions options = new FormattingOptions();
+        FormattingResult fromTokens = new GrammarFormatter(tokenStream.getTokens()).formatGrammar(options);
+        FormattingResult fromText = new GrammarFormatter(grammar).formatGrammar(options);
+
+        assertEquals(fromText.text(), fromTokens.text());
     }
 }
 

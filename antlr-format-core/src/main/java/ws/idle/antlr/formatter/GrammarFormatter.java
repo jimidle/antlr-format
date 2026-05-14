@@ -1,24 +1,15 @@
 package ws.idle.antlr.formatter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonToken;
-import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.misc.Interval;
 import ws.idle.antlr.formatter.lexer.ANTLRv4Lexer;
 
-/**
- * Pure Java port of the original formatter implementation.
- */
 public final class GrammarFormatter {
 
     private static final String FORMAT_INTRODUCER = "$antlr-format";
@@ -53,8 +44,7 @@ public final class GrammarFormatter {
     };
 
     private FormattingOptions options;
-    private final List<Token> tokens;
-    private final String sourceText;
+    private final FormatterTokenStream tokenStream;
     private boolean addOptionsAsComment;
 
     private List<Integer> outputPipeline;
@@ -93,13 +83,7 @@ public final class GrammarFormatter {
     }
 
     public GrammarFormatter(String grammar, boolean addOptionsAsComment) {
-        ANTLRv4Lexer lexer = new ANTLRv4Lexer(CharStreams.fromString(grammar));
-        lexer.removeErrorListeners();
-        CommonTokenStream tokenStream = new CommonTokenStream(lexer);
-        tokenStream.fill();
-        this.tokens = List.copyOf(tokenStream.getTokens());
-        this.sourceText = grammar;
-        this.addOptionsAsComment = addOptionsAsComment;
+        this(FormatterTokenStream.fromGrammar(grammar), addOptionsAsComment);
     }
 
     public GrammarFormatter(List<Token> tokens) {
@@ -107,68 +91,20 @@ public final class GrammarFormatter {
     }
 
     public GrammarFormatter(List<Token> tokens, boolean addOptionsAsComment) {
-        this.tokens = List.copyOf(tokens);
-        this.sourceText = extractSource(tokens);
+        this(FormatterTokenStream.fromTokens(tokens), addOptionsAsComment);
+    }
+
+    private GrammarFormatter(FormatterTokenStream tokenStream, boolean addOptionsAsComment) {
+        this.tokenStream = tokenStream;
         this.addOptionsAsComment = addOptionsAsComment;
     }
 
     public static String convertToComment(FormattingOptions options) {
-        List<String> entries = new ArrayList<>();
-        append(entries, "disabled", options.disabled);
-        append(entries, "alignTrailingComments", options.alignTrailingComments);
-        append(entries, "allowShortBlocksOnASingleLine", options.allowShortBlocksOnASingleLine);
-        append(entries, "breakBeforeBraces", options.breakBeforeBraces);
-        append(entries, "columnLimit", options.columnLimit);
-        append(entries, "continuationIndentWidth", options.continuationIndentWidth);
-        append(entries, "indentWidth", options.indentWidth);
-        append(entries, "keepEmptyLinesAtTheStartOfBlocks", options.keepEmptyLinesAtTheStartOfBlocks);
-        append(entries, "maxEmptyLinesToKeep", options.maxEmptyLinesToKeep);
-        append(entries, "reflowComments", options.reflowComments);
-        append(entries, "spaceBeforeAssignmentOperators", options.spaceBeforeAssignmentOperators);
-        append(entries, "tabWidth", options.tabWidth);
-        append(entries, "useTab", options.useTab);
-        if (options.alignColons != null) {
-            entries.add("alignColons " + options.alignColons.externalName());
-        }
-        append(entries, "singleLineOverrulesHangingColon", options.singleLineOverrulesHangingColon);
-        append(entries, "allowShortRulesOnASingleLine", options.allowShortRulesOnASingleLine);
-        if (options.alignSemicolons != null) {
-            entries.add("alignSemicolons " + options.alignSemicolons.externalName());
-        }
-        append(entries, "breakBeforeParens", options.breakBeforeParens);
-        append(entries, "ruleInternalsOnSingleLine", options.ruleInternalsOnSingleLine);
-        append(entries, "minEmptyLines", options.minEmptyLines);
-        append(entries, "groupedAlignments", options.groupedAlignments);
-        append(entries, "alignFirstTokens", options.alignFirstTokens);
-        append(entries, "alignLexerCommands", options.alignLexerCommands);
-        append(entries, "alignActions", options.alignActions);
-        append(entries, "alignLabels", options.alignLabels);
-        append(entries, "alignTrailers", options.alignTrailers);
-
-        String line = "";
-        List<String> lines = new ArrayList<>();
-        while (true) {
-            String next = entries.isEmpty() ? null : entries.remove(0);
-            if (next == null) {
-                if (!line.isEmpty()) {
-                    lines.add("// $antlr-format " + line);
-                }
-                break;
-            }
-
-            if (line.length() + next.length() > 130) {
-                lines.add("// $antlr-format " + line);
-                line = "";
-            }
-
-            line += (line.isEmpty() ? "" : ", ") + next;
-        }
-
-        return "\n" + String.join("\n", lines) + "\n\n";
+        return FormatterComments.convertToComment(options);
     }
 
     public FormattingResult formatGrammar(FormattingOptions options, Integer start, Integer stop) {
-        if (tokens.isEmpty() || Boolean.TRUE.equals(options.disabled)) {
+        if (tokenStream.isEmpty() || Boolean.TRUE.equals(options.disabled)) {
             return new FormattingResult("", -1, -1);
         }
 
@@ -207,7 +143,7 @@ public final class GrammarFormatter {
         if (this.options.reflowComments && tokenType(startIndex) == ANTLRv4Lexer.LINE_COMMENT) {
             int runningIndex = startIndex;
             while (runningIndex > 0) {
-                if (tokenText(tokens.get(runningIndex--)).contains(FORMAT_INTRODUCER)) {
+                if (tokenText(tokenAt(runningIndex--)).contains(FORMAT_INTRODUCER)) {
                     break;
                 }
 
@@ -266,10 +202,8 @@ public final class GrammarFormatter {
                 }
                 case ANTLRv4Lexer.COLON -> {
                     if (tokenLine(run) < startRow) {
-                        if (!inRule) {
-                            ++currentIndentation;
-                            inRule = true;
-                        }
+                        ++currentIndentation;
+                        inRule = true;
                         coalesceWhitespaces = true;
                     }
                     done = true;
@@ -307,10 +241,10 @@ public final class GrammarFormatter {
         currentLine = startRow;
         pushCurrentIndentation(false);
         for (int i = startIndex; i <= endIndex; ++i) {
-            Token token = tokens.get(i);
+            Token token = tokenAt(i);
 
             if (token.getType() != ANTLRv4Lexer.WS && lastEntryIs(MARKER_WHITESPACE_ERASER)) {
-                outputPipeline.remove(outputPipeline.size() - 1);
+                outputPipeline.removeLast();
             }
 
             if (minLineInsertionPending && token.getType() != ANTLRv4Lexer.WS && token.getType() != ANTLRv4Lexer.LINE_COMMENT) {
@@ -324,12 +258,12 @@ public final class GrammarFormatter {
                         continue;
                     }
 
-                    int nextType = tokens.get(i + 1).getType();
+                    int nextType = tokenAt(i + 1).getType();
                     boolean localCommentAhead = nextType == ANTLRv4Lexer.LINE_COMMENT
                         || nextType == ANTLRv4Lexer.BLOCK_COMMENT || nextType == ANTLRv4Lexer.DOC_COMMENT;
 
                     if (lastEntryIs(MARKER_WHITESPACE_ERASER)) {
-                        outputPipeline.remove(outputPipeline.size() - 1);
+                        outputPipeline.removeLast();
                         if (!localCommentAhead) {
                             continue;
                         }
@@ -348,7 +282,7 @@ public final class GrammarFormatter {
 
                     String[] parts = text.split("\\n", -1);
                     int breakCount = 0;
-                    if (localCommentAhead && lastCodeTokenIs(ANTLRv4Lexer.LPAREN)
+                    if (localCommentAhead && lastCodeTokenIsLeftParen()
                         && !Boolean.TRUE.equals(this.options.keepEmptyLinesAtTheStartOfBlocks)) {
                         breakCount = 1;
                     } else {
@@ -423,7 +357,7 @@ public final class GrammarFormatter {
                         ++currentIndentation;
                     }
                     inBraces = true;
-                    if (!nonBreakingTrailerAhead(i)) {
+                    if (requiresLineBreakAfterTrailer(i)) {
                         addLineBreak(false);
                         pushCurrentIndentation(false);
                     }
@@ -452,7 +386,7 @@ public final class GrammarFormatter {
                         addAlignmentEntry(AlignmentType.ACTION);
                     }
                     add(i++);
-                    if (inCatchFinally && !"\n".equals(tokenText(tokens.get(i)))) {
+                    if (inCatchFinally && !"\n".equals(tokenText(tokenAt(i)))) {
                         addLineBreak(false);
                     }
                     int actionStart = i;
@@ -461,7 +395,7 @@ public final class GrammarFormatter {
                     }
                     addRaw(actionStart, i - 1);
                     if (i <= endIndex) {
-                        if (inCatchFinally && !"\n".equals(tokenText(tokens.get(i - 1)))) {
+                        if (inCatchFinally && !"\n".equals(tokenText(tokenAt(i - 1)))) {
                             addLineBreak(false);
                         }
                         add(i);
@@ -478,7 +412,7 @@ public final class GrammarFormatter {
                     processFormattingCommands(i);
                     // fall through
                     boolean hasLineContent = lineHasLeadingNonWhitespaceContent();
-                    String comment = tokenText(token);
+                    StringBuilder comment = new StringBuilder(tokenText(token));
                     if (hasLineContent) {
                         if (token.getType() == ANTLRv4Lexer.LINE_COMMENT) {
                             if (Boolean.TRUE.equals(this.options.alignTrailers)) {
@@ -487,11 +421,11 @@ public final class GrammarFormatter {
                                 addAlignmentEntry(AlignmentType.TRAILING_COMMENT);
                             }
                         }
-                    } else if (!comment.contains(FORMAT_INTRODUCER)
+                    } else if (!comment.toString().contains(FORMAT_INTRODUCER)
                         && Boolean.TRUE.equals(this.options.reflowComments)
                         && token.getType() == ANTLRv4Lexer.LINE_COMMENT) {
                         while (true) {
-                            Token nextToken = tokens.get(i + 1);
+                            Token nextToken = tokenAt(i + 1);
                             if (nextToken.getType() == Token.EOF) {
                                 break;
                             }
@@ -499,18 +433,19 @@ public final class GrammarFormatter {
                             if (content.split("\\n", -1).length > 2) {
                                 break;
                             }
-                            nextToken = tokens.get(i + 2);
+                            nextToken = tokenAt(i + 2);
                             if (nextToken.getType() != ANTLRv4Lexer.LINE_COMMENT || tokenText(nextToken).contains(FORMAT_INTRODUCER)) {
                                 break;
                             }
-                            comment += "\n" + tokenText(nextToken);
+                            comment.append('\n').append(tokenText(nextToken));
                             i += 2;
                             processFormattingCommands(i);
                         }
                     }
 
-                    if (Boolean.TRUE.equals(this.options.reflowComments) && comment.contains("\n")) {
-                        String formatted = reflowComment(comment, token.getType());
+                    String commentText = comment.toString();
+                    if (Boolean.TRUE.equals(this.options.reflowComments) && commentText.contains("\n")) {
+                        String formatted = reflowComment(commentText, token.getType());
                         int whitespaceIndex = MARKER_WHITESPACE_BLOCK - whitespaceList.size();
                         outputPipeline.add(whitespaceIndex);
                         whitespaceList.add(formatted);
@@ -534,7 +469,6 @@ public final class GrammarFormatter {
                     }
                 }
                 case ANTLRv4Lexer.DOC_COMMENT -> {
-                    boolean hasLineContent = lineHasLeadingNonWhitespaceContent();
                     String comment = tokenText(token);
                     if (Boolean.TRUE.equals(this.options.reflowComments) && comment.contains("\n")) {
                         String formatted = reflowComment(comment, token.getType());
@@ -611,7 +545,7 @@ public final class GrammarFormatter {
                         case NONE -> {
                             removeTrailingWhitespaces();
                             add(i);
-                            if (!nonBreakingTrailerAhead(i) && !inSingleLineRule) {
+                            if (requiresLineBreakAfterTrailer(i) && !inSingleLineRule) {
                                 addLineBreak(false);
                                 pushCurrentIndentation(false);
                             } else {
@@ -619,7 +553,7 @@ public final class GrammarFormatter {
                             }
                         }
                         case TRAILING -> {
-                            if (!lastRealTokenIs(ANTLRv4Lexer.LINE_COMMENT)) {
+                            if (!lastRealTokenIsLineComment()) {
                                 removeTrailingWhitespaces();
                             }
                             if (singleLineBlockNesting > 0) {
@@ -627,7 +561,7 @@ public final class GrammarFormatter {
                                 add(MARKER_WHITESPACE_ERASER);
                             }
                             add(i);
-                            if (!nonBreakingTrailerAhead(i) && !inSingleLineRule) {
+                            if (requiresLineBreakAfterTrailer(i) && !inSingleLineRule) {
                                 addLineBreak(false);
                                 pushCurrentIndentation(false);
                             } else {
@@ -800,7 +734,7 @@ public final class GrammarFormatter {
                     add(i);
                     if (inBraces) {
                         coalesceWhitespaces = false;
-                        if (!nonBreakingTrailerAhead(i)) {
+                        if (requiresLineBreakAfterTrailer(i)) {
                             addLineBreak(false);
                             pushCurrentIndentation(false);
                         }
@@ -898,7 +832,7 @@ public final class GrammarFormatter {
                                 result.append(' ');
                             }
                         }
-                        result.append(tokenText(tokens.get(pendingLineComment)));
+                        result.append(tokenText(tokenAt(pendingLineComment)));
                         pendingLineComment = -1;
                     }
                     result.append('\n');
@@ -926,13 +860,13 @@ public final class GrammarFormatter {
                         } else if (isRangeBlock(entry)) {
                             int rangeIndex = -(entry - MARKER_RANGE);
                             int[] range = ranges.get(rangeIndex);
-                            result.append(sourceText, range[0], range[1] + 1);
+                            result.append(tokenStream.sourceText(), range[0], range[1] + 1);
                         }
                     } else {
                         if (tokenType(entry) == ANTLRv4Lexer.LINE_COMMENT) {
                             pendingLineComment = entry;
                         } else {
-                            result.append(tokenText(tokens.get(entry)));
+                            result.append(tokenText(tokenAt(entry)));
                         }
                     }
                 }
@@ -946,7 +880,7 @@ public final class GrammarFormatter {
                     result.append(' ');
                 }
             }
-            result.append(tokenText(tokens.get(pendingLineComment)));
+            result.append(tokenText(tokenAt(pendingLineComment)));
         }
 
         return new FormattingResult(result.toString(), targetStart, targetStop);
@@ -966,27 +900,16 @@ public final class GrammarFormatter {
         }
 
         int entry = outputPipeline.get(index);
-        switch (marker) {
-            case MARKER_WHITESPACE:
-                return entry == MARKER_LINE_BREAK || entry == MARKER_SPACE || entry == MARKER_TAB;
-            case MARKER_SPACE:
-                return entry == MARKER_SPACE;
-            case MARKER_TAB:
-                return entry == MARKER_TAB;
-            case MARKER_LINE_BREAK:
-                return entry == MARKER_LINE_BREAK;
-            case MARKER_COMMENT:
-                if (entry < 0) {
-                    return false;
-                }
-                return tokenType(entry) == ANTLRv4Lexer.BLOCK_COMMENT || tokenType(entry) == ANTLRv4Lexer.LINE_COMMENT
-                    || tokenType(entry) == ANTLRv4Lexer.DOC_COMMENT;
-            default:
-                if (entry < 0) {
-                    return entry == marker;
-                }
-                return tokenType(entry) == marker;
-        }
+        return switch (marker) {
+            case MARKER_WHITESPACE -> entry == MARKER_LINE_BREAK || entry == MARKER_SPACE || entry == MARKER_TAB;
+            case MARKER_SPACE -> entry == MARKER_SPACE;
+            case MARKER_TAB -> entry == MARKER_TAB;
+            case MARKER_LINE_BREAK -> entry == MARKER_LINE_BREAK;
+            case MARKER_COMMENT -> entry >= 0 && (tokenType(entry) == ANTLRv4Lexer.BLOCK_COMMENT
+                || tokenType(entry) == ANTLRv4Lexer.LINE_COMMENT
+                || tokenType(entry) == ANTLRv4Lexer.DOC_COMMENT);
+            default -> entry < 0 ? entry == marker : tokenType(entry) == marker;
+        };
     }
 
     private boolean lastEntryIs(int marker) {
@@ -1007,7 +930,7 @@ public final class GrammarFormatter {
         return outputPipeline.get(index) != MARKER_LINE_BREAK;
     }
 
-    private boolean lastCodeTokenIs(int marker) {
+    private boolean lastCodeTokenIsLeftParen() {
         int i = outputPipeline.size() - 1;
         while (i >= 0) {
             if (!entryIs(i, MARKER_WHITESPACE_ERASER)
@@ -1021,10 +944,10 @@ public final class GrammarFormatter {
         if (i < 0 || outputPipeline.get(i) < 0) {
             return false;
         }
-        return tokenType(outputPipeline.get(i)) == marker;
+        return tokenType(outputPipeline.get(i)) == ANTLRv4Lexer.LPAREN;
     }
 
-    private boolean lastRealTokenIs(int marker) {
+    private boolean lastRealTokenIsLineComment() {
         int i = outputPipeline.size() - 1;
         while (i >= 0) {
             if (!entryIs(i, MARKER_WHITESPACE_ERASER)
@@ -1037,7 +960,7 @@ public final class GrammarFormatter {
         if (i < 0 || outputPipeline.get(i) < 0) {
             return false;
         }
-        return tokenType(outputPipeline.get(i)) == marker;
+        return tokenType(outputPipeline.get(i)) == ANTLRv4Lexer.LINE_COMMENT;
     }
 
     private void removeLastEntry() {
@@ -1045,7 +968,7 @@ public final class GrammarFormatter {
             return;
         }
 
-        int lastEntry = outputPipeline.remove(outputPipeline.size() - 1);
+        int lastEntry = outputPipeline.removeLast();
         switch (lastEntry) {
             case MARKER_WHITESPACE_ERASER -> {
             }
@@ -1134,7 +1057,7 @@ public final class GrammarFormatter {
             return;
         }
 
-        Token token = marker >= 0 && marker < tokens.size() ? tokens.get(marker) : null;
+        Token token = marker >= 0 && marker < tokenCount() ? tokenAt(marker) : null;
         if (token != null) {
             switch (token.getType()) {
                 case ANTLRv4Lexer.BLOCK_COMMENT, ANTLRv4Lexer.ACTION_CONTENT -> {
@@ -1165,47 +1088,15 @@ public final class GrammarFormatter {
     }
 
     private int tokenFromIndex(int charIndex, boolean first) {
-        if (charIndex < 0) {
-            return 0;
-        }
-        if (charIndex >= sourceText.length()) {
-            return tokens.size() - 1;
-        }
-        for (int i = 0; i < tokens.size(); ++i) {
-            Token token = tokens.get(i);
-            if (token.getStartIndex() > charIndex) {
-                if (i == 0) {
-                    return i;
-                }
-                --i;
-                if (!first) {
-                    return i;
-                }
-                int row = tokens.get(i).getLine();
-                while (i > 0 && tokens.get(i - 1).getLine() == row) {
-                    --i;
-                }
-                return i;
-            }
-        }
-        return tokens.size() - 1;
+        return tokenStream.tokenIndexForCharIndex(charIndex, first);
     }
 
     private int computeLineLength(String text) {
-        int length = 0;
-        for (char ch : text.toCharArray()) {
-            if (ch == '\t') {
-                int offsetToNextTabStop = options.tabWidth - (currentColumn % options.tabWidth);
-                length += offsetToNextTabStop;
-            } else {
-                ++length;
-            }
-        }
-        return length;
+        return FormatterComments.computeLineLength(text, options.tabWidth, currentColumn);
     }
 
     private void addRaw(int start, int stop) {
-        String text = sourceText.substring(tokenStart(start), tokenStop(stop) + 1);
+        String text = tokenStream.sourceSlice(tokenStart(start), tokenStop(stop));
         if (text.contains("\n")) {
             String[] parts = text.split("\\n", -1);
             currentLine += parts.length - 1;
@@ -1261,13 +1152,13 @@ public final class GrammarFormatter {
         boolean containsAlts = false;
         int singleLineLength = 1;
         int nestingLevel = 0;
-        Token token = tokens.get(i);
+        Token token = tokenAt(i);
         if (token.getType() == ANTLRv4Lexer.COLON || token.getType() == ANTLRv4Lexer.OR) {
             ++singleLineLength;
         }
 
-        while (++i < tokens.size()) {
-            token = tokens.get(i);
+        while (++i < tokenCount()) {
+            token = tokenAt(i);
             switch (token.getType()) {
                 case ANTLRv4Lexer.WS -> {
                 }
@@ -1327,31 +1218,31 @@ public final class GrammarFormatter {
     }
 
     private BlockInfo finalizeBlockInfo(boolean containsAlts, int singleLineLength, int i) {
-        while (++i < tokens.size() && tokenType(i) == ANTLRv4Lexer.WS) {
-            if (tokenText(tokens.get(i)).contains("\n")) {
+        while (++i < tokenCount() && tokenType(i) == ANTLRv4Lexer.WS) {
+            if (tokenText(tokenAt(i)).contains("\n")) {
                 return new BlockInfo(containsAlts, singleLineLength);
             }
         }
-        if (i < tokens.size() && tokenType(i) == ANTLRv4Lexer.LINE_COMMENT) {
-            singleLineLength += tokenText(tokens.get(i)).length();
+        if (i < tokenCount() && tokenType(i) == ANTLRv4Lexer.LINE_COMMENT) {
+            singleLineLength += tokenText(tokenAt(i)).length();
         }
         return new BlockInfo(containsAlts, singleLineLength);
     }
 
-    private boolean nonBreakingTrailerAhead(int i) {
+    private boolean requiresLineBreakAfterTrailer(int i) {
         if (tokenType(++i) == ANTLRv4Lexer.WS) {
-            if (tokenText(tokens.get(i)).contains("\n")) {
-                return false;
+            if (tokenText(tokenAt(i)).contains("\n")) {
+                return true;
             }
             ++i;
         }
-        return tokenType(i) == ANTLRv4Lexer.LINE_COMMENT
-            || tokenType(i) == ANTLRv4Lexer.RARROW
-            || tokenType(i) == ANTLRv4Lexer.LPAREN;
+        return tokenType(i) != ANTLRv4Lexer.LINE_COMMENT
+            && tokenType(i) != ANTLRv4Lexer.RARROW
+            && tokenType(i) != ANTLRv4Lexer.LPAREN;
     }
 
     private void processFormattingCommands(int index) {
-        String text = tokenText(tokens.get(index));
+        String text = tokenText(tokenAt(index));
         if (text.startsWith("//")) {
             text = text.substring(2).trim();
         } else if (text.startsWith("/*")) {
@@ -1416,25 +1307,19 @@ public final class GrammarFormatter {
                     }
                 }
                 case "alignColons" -> {
-                    if ("none".equals(value)) {
-                        options.alignColons = ColonAlignment.NONE;
-                    } else if ("trailing".equals(value)) {
-                        options.alignColons = ColonAlignment.TRAILING;
-                    } else if ("hanging".equals(value)) {
-                        options.alignColons = ColonAlignment.HANGING;
-                    } else {
-                        add(MARKER_ERROR);
+                    switch (value) {
+                        case "none" -> options.alignColons = ColonAlignment.NONE;
+                        case "trailing" -> options.alignColons = ColonAlignment.TRAILING;
+                        case "hanging" -> options.alignColons = ColonAlignment.HANGING;
+                        default -> add(MARKER_ERROR);
                     }
                 }
                 case "alignSemicolons" -> {
-                    if ("none".equals(value)) {
-                        options.alignSemicolons = SemicolonAlignment.NONE;
-                    } else if ("ownLine".equals(value)) {
-                        options.alignSemicolons = SemicolonAlignment.OWN_LINE;
-                    } else if ("hanging".equals(value)) {
-                        options.alignSemicolons = SemicolonAlignment.HANGING;
-                    } else {
-                        add(MARKER_ERROR);
+                    switch (value) {
+                        case "none" -> options.alignSemicolons = SemicolonAlignment.NONE;
+                        case "ownLine" -> options.alignSemicolons = SemicolonAlignment.OWN_LINE;
+                        case "hanging" -> options.alignSemicolons = SemicolonAlignment.HANGING;
+                        default -> add(MARKER_ERROR);
                     }
                 }
                 default -> add(MARKER_ERROR);
@@ -1509,7 +1394,11 @@ public final class GrammarFormatter {
     }
 
     private void addAlignmentEntry(AlignmentType type) {
-        AlignmentStatus status = alignments.computeIfAbsent(type, t -> new AlignmentStatus());
+        AlignmentStatus status = alignments.get(type);
+        if (status == null) {
+            status = new AlignmentStatus();
+            alignments.put(type, status);
+        }
         if (status.lastLine != currentLine) {
             if (lineHasLeadingNonWhitespaceContent()) {
                 removeTrailingTabsAndSpaces();
@@ -1518,7 +1407,7 @@ public final class GrammarFormatter {
             if (status.lastLine > -1) {
                 if (!Boolean.TRUE.equals(options.groupedAlignments) || status.lastLine + 1 == currentLine) {
                     startNewGroup = false;
-                    status.groups.get(status.groups.size() - 1).add(outputPipeline.size());
+                    status.groups.getLast().add(outputPipeline.size());
                 }
             }
             if (startNewGroup) {
@@ -1539,7 +1428,7 @@ public final class GrammarFormatter {
             }
             for (List<Integer> group : alignment.groups) {
                 if (group.size() == 1) {
-                    int index = group.get(0);
+                    int index = group.getFirst();
                     if (index < outputPipeline.size()) {
                         if (entryIs(index - 1, MARKER_WHITESPACE) || entryIs(index - 1, ANTLRv4Lexer.LPAREN)) {
                             outputPipeline.set(index, MARKER_WHITESPACE_ERASER);
@@ -1605,13 +1494,13 @@ public final class GrammarFormatter {
                         if (isRangeBlock(entry)) {
                             int rangeIndex = -(entry - MARKER_RANGE);
                             int[] range = ranges.get(rangeIndex);
-                            text.append(sourceText, range[0], range[1] + 1);
+                            text.append(tokenStream.sourceText(), range[0], range[1] + 1);
                         } else if (isWhitespaceBlock(entry)) {
                             int whitespaceIndex = -(entry - MARKER_WHITESPACE_BLOCK);
                             text.append(whitespaceList.get(whitespaceIndex));
                         }
                     } else {
-                        text.append(tokenText(tokens.get(entry)));
+                        text.append(tokenText(tokenAt(entry)));
                     }
                 }
             }
@@ -1627,86 +1516,7 @@ public final class GrammarFormatter {
     }
 
     private String reflowComment(String comment, int type) {
-        List<String> result = new ArrayList<>();
-        String lineIntroducer = type == ANTLRv4Lexer.LINE_COMMENT ? "// " : " * ";
-        List<String> lines = new ArrayList<>(Arrays.asList(comment.split("\\n", -1)));
-
-        int lineIndex = 0;
-        List<String> pipeline = splitWords(lines.get(lineIndex++));
-        String line;
-        if (type != ANTLRv4Lexer.LINE_COMMENT) {
-            if (!lines.get(1).trim().startsWith("*")) {
-                lineIntroducer = " ";
-            }
-            String last = lines.get(lines.size() - 1).trim();
-            last = last.substring(0, Math.max(0, last.length() - 2));
-            if (last.isEmpty()) {
-                lines.remove(lines.size() - 1);
-            } else {
-                lines.set(lines.size() - 1, last);
-            }
-        }
-
-        boolean isFirst = false;
-        if (pipeline.size() == 1) {
-            result.add(pipeline.get(0));
-            line = lineIntroducer;
-            isFirst = true;
-        } else {
-            line = pipeline.get(0) + " ";
-        }
-
-        int index = 1;
-        int column = computeLineLength(line);
-        while (true) {
-            while (index < pipeline.size()) {
-                if (currentColumn + column + pipeline.get(index).length() > options.columnLimit) {
-                    result.add(line.substring(0, line.length() - 1));
-                    line = lineIntroducer;
-                    column = computeLineLength(line);
-                }
-                line += pipeline.get(index++) + " ";
-                column = computeLineLength(line);
-            }
-            if (lineIndex == lines.size()) {
-                break;
-            }
-            pipeline = splitWords(lines.get(lineIndex++));
-            index = 0;
-            if (!pipeline.isEmpty()) {
-                String first = pipeline.get(0);
-                if (type == ANTLRv4Lexer.LINE_COMMENT) {
-                    if ("//".equals(first)) {
-                        pipeline = new ArrayList<>(pipeline.subList(1, pipeline.size()));
-                    } else {
-                        pipeline.set(0, first.substring(2));
-                    }
-                } else if ("*".equals(first)) {
-                    pipeline = new ArrayList<>(pipeline.subList(1, pipeline.size()));
-                } else if (first.startsWith("*")) {
-                    pipeline.set(0, first.substring(1));
-                }
-            }
-            if (pipeline.isEmpty()) {
-                if (!isFirst) {
-                    result.add(line.substring(0, line.length() - 1));
-                }
-                result.add(lineIntroducer);
-                line = lineIntroducer;
-            }
-            isFirst = false;
-        }
-
-        if (!line.isEmpty()) {
-            result.add(line.substring(0, line.length() - 1));
-        }
-        if (type != ANTLRv4Lexer.LINE_COMMENT) {
-            result.add(" */");
-        }
-        String indentation = Boolean.TRUE.equals(options.useTab)
-            ? "\t".repeat(currentIndentation)
-            : " ".repeat(currentIndentation * options.indentWidth);
-        return String.join("\n" + indentation, result);
+        return FormatterComments.reflowComment(comment, type, options, currentColumn, currentIndentation);
     }
 
     private boolean isRangeBlock(int marker) {
@@ -1717,71 +1527,36 @@ public final class GrammarFormatter {
         return marker <= MARKER_WHITESPACE_BLOCK;
     }
 
-    private static List<String> splitWords(String line) {
-        return Arrays.stream(line.split("[ \\t]"))
-            .filter(entry -> !entry.isEmpty())
-            .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
-    }
-
     private int tokenType(int index) {
-        return tokens.get(index).getType();
+        return tokenStream.type(index);
     }
 
     private int tokenLine(int index) {
-        return tokens.get(index).getLine();
+        return tokenStream.line(index);
     }
 
     private int tokenColumn(int index) {
-        return tokens.get(index).getCharPositionInLine();
+        return tokenStream.column(index);
     }
 
     private int tokenStart(int index) {
-        return tokens.get(index).getStartIndex();
+        return tokenStream.start(index);
     }
 
     private int tokenStop(int index) {
-        return tokens.get(index).getStopIndex();
+        return tokenStream.stop(index);
     }
 
     private static String tokenText(Token token) {
-        return token.getText() == null ? "" : token.getText();
+        return FormatterTokenStream.text(token);
     }
 
-    private boolean containsFormattingOptions() {
-        for (Token token : tokens) {
-            if ((token.getType() == ANTLRv4Lexer.LINE_COMMENT || token.getType() == ANTLRv4Lexer.BLOCK_COMMENT
-                || token.getType() == ANTLRv4Lexer.DOC_COMMENT) && tokenText(token).contains(FORMAT_INTRODUCER)) {
-                return true;
-            }
-        }
-        return false;
+    private Token tokenAt(int index) {
+        return tokenStream.token(index);
     }
 
-    private static String extractSource(List<Token> tokens) {
-        if (tokens.isEmpty()) {
-            return "";
-        }
-        Token first = tokens.get(0);
-        if (first instanceof CommonToken commonToken) {
-            CharStream inputStream = commonToken.getInputStream();
-            if (inputStream != null && inputStream.size() > 0) {
-                return inputStream.getText(Interval.of(0, inputStream.size() - 1));
-            }
-        }
-        StringBuilder builder = new StringBuilder();
-        for (Token token : tokens) {
-            if (token.getType() != Token.EOF) {
-                builder.append(tokenText(token));
-            }
-        }
-        return builder.toString();
+    private int tokenCount() {
+        return tokenStream.size();
     }
-
-    private static void append(List<String> entries, String key, Object value) {
-        if (value != null) {
-            entries.add(key + " " + value);
-        }
-    }
-
 }
 
