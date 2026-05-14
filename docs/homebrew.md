@@ -105,7 +105,7 @@ https://github.com/jimidle/antlr-format/releases/download/v1.0.2/antlr-format-cl
 with SHA-256:
 
 ```text
-21a87b2b0f3ce7271d43d07857c1610c855f4aef5a4a4875c4e2b00e28bb2989
+03fdf17f2ba7edb2f68e710695a145096394fc475de71bbefa5c1b2346fa5335
 ```
 
 ## Release maintenance checklist
