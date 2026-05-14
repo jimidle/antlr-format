@@ -3,6 +3,7 @@
 `antlr-format` is a Java implementation of the ANTLR grammar formatter, packaged both as:
 
 - a reusable formatter library
+- a standalone runnable CLI jar
 - a Maven plugin for formatting `.g4` files in place during builds or from the command line
 
 The repository is organized as a Maven multi-module build so the formatter core can be used directly by tools and
@@ -15,7 +16,8 @@ This rewrite is based on the original formatter project by Mike Lischke:
 
 ## Repository layout
 
-- `antlr-format-core` – formatter engine, API surface, lexer support, and small utility runner
+- `antlr-format-core` – formatter engine, API surface, lexer support, and shared output helpers
+- `antlr-format-cli` – standalone `java -jar` command line formatter
 - `antlr-format-maven-plugin` – Maven goal `antlr-format:format`
 
 ## Requirements
@@ -37,6 +39,12 @@ Build the Maven plugin artifact explicitly:
 
 ```bash
 mvn -B --no-transfer-progress -pl antlr-format-maven-plugin -am package
+```
+
+Build the standalone CLI jar explicitly:
+
+```bash
+mvn -B --no-transfer-progress -pl antlr-format-cli -am package
 ```
 
 Run only the core module tests:
@@ -89,6 +97,37 @@ String comment = GrammarFormatter.convertToComment(FormattingOptions.defaults())
 
 Or ask `GrammarFormatter` / `AntlrFormatterService` to inject the effective options automatically when formatting.
 
+## Using the standalone CLI
+
+Build the CLI jar:
+
+```bash
+mvn -B --no-transfer-progress -pl antlr-format-cli -am package
+```
+
+Format a grammar to standard output:
+
+```bash
+java -jar antlr-format-cli/target/antlr-format-cli-1.0.0-SNAPSHOT.jar path/to/Grammar.g4
+```
+
+Overwrite the input file in place:
+
+```bash
+java -jar antlr-format-cli/target/antlr-format-cli-1.0.0-SNAPSHOT.jar --write path/to/Grammar.g4
+```
+
+Inject the effective formatter options as a comment when the grammar does not already contain formatter directives:
+
+```bash
+java -jar antlr-format-cli/target/antlr-format-cli-1.0.0-SNAPSHOT.jar --add-options path/to/Grammar.g4
+```
+
+The CLI exposes a flag for every inline formatter option described in the directive reference, and inline grammar comments
+take precedence over command line flags.
+
+See [`docs/cli.md`](docs/cli.md) for the complete CLI option table, output modes, and precedence rules.
+
 ## Using the Maven plugin
 
 The Maven plugin formats grammar files from a source directory, defaulting to `src/main/antlr4`.
@@ -132,6 +171,27 @@ The plugin supports these top-level parameters:
 - `main` – main formatter option set
 - `lexer` – optional lexer-specific formatter option set
 
+The nested `main` and `lexer` blocks accept every formatter option that can be set inline with
+`// $antlr-format ...`, using the same option names as the directive reference.
+
+### Configuration precedence
+
+Formatter behavior is resolved in this order:
+
+1. built-in formatter defaults
+2. Maven plugin configuration from `main` or `lexer`
+3. inline grammar directives inside the grammar itself
+
+That means grammar comments always override the plugin configuration.
+`// $antlr-format reset` resets back to the built-in defaults, not back to the surrounding Maven configuration.
+
+### `addOptions` behavior
+
+When `addOptions` is enabled, the formatter injects the effective option set as a directive comment at the top of the
+output only if the grammar does not already contain any formatter directives.
+
+See [`docs/maven-plugin.md`](docs/maven-plugin.md) for the complete plugin guide.
+
 ### Dry-run example
 
 ```bash
@@ -158,6 +218,8 @@ Examples:
 For the complete directive reference, defaults, option interactions, and caveats, see
 [`docs/formatter-directives.md`](docs/formatter-directives.md).
 
+Inline formatter directives always take precedence over external configuration supplied from the Maven plugin or CLI.
+
 ## Development workflow
 
 This repository uses a protected `main` branch and a feature-branch + pull-request workflow.
@@ -178,9 +240,9 @@ mvn -B --no-transfer-progress verify
 
 This keeps local verification and remote verification aligned.
 
-## Command-line helper runner
+## Legacy helper runner
 
-The core module currently includes a small helper runner class:
+The core module still includes a small helper runner class:
 
 ```bash
 java -cp antlr-format-core/target/antlr-format-core-1.0.0-SNAPSHOT.jar \
@@ -188,6 +250,7 @@ java -cp antlr-format-core/target/antlr-format-core-1.0.0-SNAPSHOT.jar \
 ```
 
 That runner is intentionally minimal and primarily useful for local experimentation.
+For a supported end-user command line interface, prefer the standalone CLI module documented in [`docs/cli.md`](docs/cli.md).
 
 ## License
 

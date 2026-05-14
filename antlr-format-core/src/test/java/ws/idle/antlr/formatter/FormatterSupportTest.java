@@ -73,6 +73,13 @@ class FormatterSupportTest {
     }
 
     @Test
+    void outputNormalizationUsesRequestedLineSeparatorAndAppendsTrailingNewline() {
+        String normalized = FormattingOutputs.normalizeForOutput("grammar Demo;\ra: 'a';", "\r\n");
+
+        assertEquals("grammar Demo;\r\na: 'a';\r\n", normalized);
+    }
+
+    @Test
     void directiveParserUnderstandsFormatterComments() {
         String comment = "// $antlr-format alignLabels on, columnLimit 120, alignColons trailing";
 
