@@ -118,6 +118,32 @@ The only `FormattingOptions` field intentionally excluded from the table is `dis
 | `alignLabels` | `on` / `off` | `true` | Aligns labels introduced by `#` on multi-line rules. Ignored when `alignTrailers` is enabled. |
 | `alignTrailers` | `on` / `off` | `false` | Master trailer-alignment switch. When enabled it takes precedence over label, action, lexer-command, and trailing-comment alignment. |
 
+## Configuration precedence
+
+The formatter resolves configuration in layers:
+
+1. built-in formatter defaults
+2. external options supplied by API callers, the Maven plugin, or the standalone CLI
+3. inline grammar directives encountered in source order
+
+This means inline grammar comments always override the surrounding plugin, CLI, or library configuration.
+
+### `reset` returns to built-in defaults
+
+`reset` does **not** restore the external configuration supplied by the plugin, CLI, or Java API.
+It resets the active formatter state to the built-in defaults and formatting continues from there until later directives
+change the state again.
+
+### Same option vocabulary across grammars, CLI, and plugin config
+
+The formatter uses the same option names across:
+
+- inline grammar directives
+- Maven plugin `<main>` / `<lexer>` configuration blocks
+- standalone CLI flags documented in [`cli.md`](cli.md)
+
+The only deliberate exception is the API-only `disabled` field discussed in the caveats section below.
+
 ## Alignment option interactions
 
 Several alignment options overlap. The formatter applies them with explicit precedence.
@@ -349,6 +375,8 @@ messyRule   :   'a'|'b'   ;
 ## Related documentation
 
 - [Project README](../README.md)
+- [Command line interface](cli.md)
+- [Maven plugin guide](maven-plugin.md)
 - [Contributing guide](../CONTRIBUTING.md)
 
 

@@ -19,6 +19,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import ws.idle.antlr.formatter.AntlrFormatterService;
 import ws.idle.antlr.formatter.FormattingConfiguration;
 import ws.idle.antlr.formatter.FormattingOptions;
+import ws.idle.antlr.formatter.FormattingOutputs;
 import ws.idle.antlr.formatter.FormattingResult;
 
 /** Maven goal that formats ANTLR grammar files in-place. */
@@ -99,7 +100,7 @@ public class AntlrFormatMojo extends AbstractMojo {
             }
 
             FormattingResult result = formatterService.format(input, configuration, addOptions, 0, Integer.MAX_VALUE);
-            String fileText = normalizeForFileWrite(result.text());
+            String fileText = FormattingOutputs.normalizeForOutput(result.text());
             if (!input.equals(fileText)) {
                 changed++;
                 if (dryRun) {
@@ -180,31 +181,5 @@ public class AntlrFormatMojo extends AbstractMojo {
         }
     }
 
-    /**
-     * Normalizes formatter output for writing to disk using the current operating system's line separator.
-     * Ensures the resulting file content always ends with a trailing line separator.
-     *
-     * @param text the formatter output to normalize
-     * @return the normalized file content
-     */
-    static String normalizeForFileWrite(String text) {
-        return normalizeForFileWrite(text, System.lineSeparator());
-    }
-
-    /**
-     * Normalizes formatter output for writing to disk using the supplied line separator.
-     * Ensures the resulting file content always ends with a trailing line separator.
-     *
-     * @param text the formatter output to normalize
-     * @param lineSeparator the line separator to use in the written file
-     * @return the normalized file content
-     */
-    static String normalizeForFileWrite(String text, String lineSeparator) {
-        String normalized = text.replace("\r\n", "\n").replace("\r", "\n").replace("\n", lineSeparator);
-        if (normalized.endsWith(lineSeparator)) {
-            return normalized;
-        }
-        return normalized + lineSeparator;
-    }
 }
 

@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 class FormattingOptionCoverageTest {
 
     @Test
-    void everyInlineDirectiveOptionIsParsedAndAppliedByTheFormattingSession() throws Exception {
+    void everyInlineDirectiveOptionIsParsedAndOverridesIncomingFormattingOptions() throws Exception {
         List<Field> inlineFields = optionFields().stream()
             .filter(field -> !"disabled".equals(field.getName()))
             .toList();
@@ -47,7 +47,7 @@ class FormattingOptionCoverageTest {
         Method initializeOptions = GrammarFormattingSession.class.getDeclaredMethod("initializeOptions",
             FormattingOptions.class);
         initializeOptions.setAccessible(true);
-        initializeOptions.invoke(session, new FormattingOptions());
+        initializeOptions.invoke(session, oppositeOverrides());
 
         Method processFormattingCommands = GrammarFormattingSession.class.getDeclaredMethod("processFormattingCommands",
             int.class);
@@ -95,6 +95,8 @@ class FormattingOptionCoverageTest {
 
         assertTrue(docs.contains("`disabled` is not a recognized inline option name"));
         assertTrue(docs.contains("// $antlr-format disabled true"));
+        assertTrue(docs.contains("inline grammar comments always override the surrounding plugin, CLI, or library configuration"));
+        assertTrue(docs.contains("resets the active formatter state to the built-in defaults"));
     }
 
     private static List<Field> optionFields() {
@@ -132,6 +134,48 @@ class FormattingOptionCoverageTest {
             case "alignActions" -> true;
             case "alignLabels" -> false;
             case "alignTrailers" -> true;
+            default -> throw new IllegalArgumentException("Unhandled option: " + optionName);
+        };
+    }
+
+    private static FormattingOptions oppositeOverrides() throws IllegalAccessException {
+        FormattingOptions overrides = new FormattingOptions();
+        for (Field field : optionFields()) {
+            if ("disabled".equals(field.getName())) {
+                continue;
+            }
+            field.set(overrides, oppositeValue(field.getName()));
+        }
+        return overrides;
+    }
+
+    private static Object oppositeValue(String optionName) {
+        return switch (optionName) {
+            case "alignTrailingComments" -> false;
+            case "allowShortBlocksOnASingleLine" -> true;
+            case "breakBeforeBraces" -> false;
+            case "columnLimit" -> 101;
+            case "continuationIndentWidth" -> 2;
+            case "indentWidth" -> 6;
+            case "keepEmptyLinesAtTheStartOfBlocks" -> false;
+            case "maxEmptyLinesToKeep" -> 1;
+            case "reflowComments" -> false;
+            case "spaceBeforeAssignmentOperators" -> true;
+            case "tabWidth" -> 4;
+            case "useTab" -> false;
+            case "alignColons" -> ColonAlignment.TRAILING;
+            case "singleLineOverrulesHangingColon" -> true;
+            case "allowShortRulesOnASingleLine" -> true;
+            case "alignSemicolons" -> SemicolonAlignment.OWN_LINE;
+            case "breakBeforeParens" -> false;
+            case "ruleInternalsOnSingleLine" -> false;
+            case "minEmptyLines" -> 0;
+            case "groupedAlignments" -> true;
+            case "alignFirstTokens" -> false;
+            case "alignLexerCommands" -> false;
+            case "alignActions" -> false;
+            case "alignLabels" -> true;
+            case "alignTrailers" -> false;
             default -> throw new IllegalArgumentException("Unhandled option: " + optionName);
         };
     }

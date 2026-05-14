@@ -1,6 +1,7 @@
 package ws.idle.antlr.formatter.maven;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -16,6 +17,8 @@ import org.junit.jupiter.api.io.TempDir;
 import ws.idle.antlr.formatter.AntlrFormatterService;
 import ws.idle.antlr.formatter.FormattingConfiguration;
 import ws.idle.antlr.formatter.FormattingOptions;
+import ws.idle.antlr.formatter.FormattingOutputs;
+import ws.idle.antlr.formatter.GrammarFormatter;
 
 class AntlrFormatMojoTest {
 
@@ -37,6 +40,19 @@ class AntlrFormatMojoTest {
     }
 
     @Test
+    void addOptionsCanInjectFormatterConfigurationComment() throws Exception {
+        Path grammar = writeGrammar();
+        AntlrFormatMojo mojo = configuredMojo(tempDir);
+        setField(mojo, "addOptions", true);
+
+        mojo.execute();
+
+        String actual = Files.readString(grammar, StandardCharsets.UTF_8);
+        assertTrue(actual.startsWith(GrammarFormatter.convertToComment(FormattingOptions.defaults())));
+        assertTrue(actual.contains("grammar Demo;"));
+    }
+
+    @Test
     void addsTrailingSystemNewlineWhenFormattingIsOtherwiseStable() throws Exception {
         Path grammar = writeGrammar(expectedFormatting().stripTrailing());
         AntlrFormatMojo mojo = configuredMojo(tempDir);
@@ -50,9 +66,25 @@ class AntlrFormatMojoTest {
 
     @Test
     void normalizesWrittenFilesToTheConfiguredLineSeparator() {
-        String normalized = AntlrFormatMojo.normalizeForFileWrite("grammar Demo;\na: 'a';", "\r\n");
+        String normalized = FormattingOutputs.normalizeForOutput("grammar Demo;\na: 'a';", "\r\n");
 
         assertEquals("grammar Demo;\r\na: 'a';\r\n", normalized);
+    }
+
+    @Test
+    void grammarCommentsOverridePluginConfigurationOptions() throws Exception {
+        String grammarText = "// $antlr-format spaceBeforeAssignmentOperators off\ngrammar Demo;\na: value=ID;\n";
+        Path grammar = writeGrammar(grammarText);
+        AntlrFormatMojo mojo = configuredMojo(tempDir);
+        FormattingOptions mainOptions = new FormattingOptions();
+        mainOptions.spaceBeforeAssignmentOperators = true;
+        setField(mojo, "main", mainOptions);
+
+        mojo.execute();
+
+        String actual = Files.readString(grammar, StandardCharsets.UTF_8);
+        assertTrue(actual.contains("value=ID"));
+        assertFalse(actual.contains("value = ID"));
     }
 
     @Test
@@ -112,7 +144,7 @@ class AntlrFormatMojoTest {
     }
 
     private String expectedFormattingForFile() {
-        return AntlrFormatMojo.normalizeForFileWrite(expectedFormatting(), System.lineSeparator());
+        return FormattingOutputs.normalizeForOutput(expectedFormatting(), System.lineSeparator());
     }
 
     private static void setField(Object target, String name, Object value) throws Exception {
