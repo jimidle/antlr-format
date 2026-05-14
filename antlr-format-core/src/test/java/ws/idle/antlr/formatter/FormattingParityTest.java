@@ -28,6 +28,15 @@ class FormattingParityTest {
     }
 
     @Test
+    void breakBeforeBracesFormatting() throws IOException {
+        FormattingResult result = formatGrammarFromResource("tests/formatting/break-before-braces.g4",
+            new FormattingOptions(), 0, (int) 1e10);
+
+        String expected = FormattingTestSupport.readResource("tests/formatting-results/break-before-braces.g4");
+        assertEquals(expected, result.text());
+    }
+
+    @Test
     void rangedFormatting() throws IOException {
         FormattingResult first = formatGrammarFromResource("tests/formatting/raw.g4", optionsWithReflowComments(), -10,
             -20);
