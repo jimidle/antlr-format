@@ -36,7 +36,8 @@ brew install jimidle/antlr-format/antlr-format
 ```
 
 That command uses the tap automatically, so a separate `brew tap` step is optional.
-If you want the shorter command below instead, the formula would need to be accepted into `homebrew-core`:
+If you want the shorter command below instead, the formula would need to be accepted into `homebrew-core`.
+At the moment, Homebrew's published eligibility guidelines for new self-submitted formulae make that unlikely for this project's current public-notability metrics:
 
 ```bash
 brew install antlr-format
@@ -94,8 +95,8 @@ mvn -B --no-transfer-progress -pl antlr-format-cli -am package
 That command also builds installable CLI distribution archives at:
 
 ```text
-antlr-format-cli/target/antlr-format-cli-1.0.0.zip
-antlr-format-cli/target/antlr-format-cli-1.0.0.tar.gz
+antlr-format-cli/target/antlr-format-cli-1.0.1.zip
+antlr-format-cli/target/antlr-format-cli-1.0.1.tar.gz
 ```
 
 Run only the core module tests:
@@ -148,6 +149,8 @@ String comment = GrammarFormatter.convertToComment(FormattingOptions.defaults())
 
 Or ask `GrammarFormatter` / `AntlrFormatterService` to inject the effective options automatically when formatting.
 
+See [`docs/core.md`](docs/core.md) for a dedicated core-library guide and dependency snippet.
+
 ## Using the standalone CLI
 
 Build the CLI jar:
@@ -159,19 +162,19 @@ mvn -B --no-transfer-progress -pl antlr-format-cli -am package
 Format a grammar to standard output:
 
 ```bash
-java -jar antlr-format-cli/target/antlr-format-cli-1.0.0.jar path/to/Grammar.g4
+java -jar antlr-format-cli/target/antlr-format-cli-1.0.1.jar path/to/Grammar.g4
 ```
 
 Overwrite the input file in place:
 
 ```bash
-java -jar antlr-format-cli/target/antlr-format-cli-1.0.0.jar --write path/to/Grammar.g4
+java -jar antlr-format-cli/target/antlr-format-cli-1.0.1.jar --write path/to/Grammar.g4
 ```
 
 Inject the effective formatter options as a comment when the grammar does not already contain formatter directives:
 
 ```bash
-java -jar antlr-format-cli/target/antlr-format-cli-1.0.0.jar --add-options path/to/Grammar.g4
+java -jar antlr-format-cli/target/antlr-format-cli-1.0.1.jar --add-options path/to/Grammar.g4
 ```
 
 If you prefer an installable command instead of invoking `java -jar` directly, unpack one of the CLI distribution archives and
@@ -200,7 +203,7 @@ The Maven plugin formats grammar files from a source directory, defaulting to `s
 <plugin>
   <groupId>ws.idle</groupId>
   <artifactId>antlr-format-maven-plugin</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
   <executions>
     <execution>
       <goals>
@@ -307,7 +310,7 @@ This keeps local verification and remote verification aligned.
 The core module still includes a small helper runner class:
 
 ```bash
-java -cp antlr-format-core/target/antlr-format-core-1.0.0.jar \
+java -cp antlr-format-core/target/antlr-format-core-1.0.1.jar \
   ws.idle.antlr.formatter.FormatterRunner path/to/Grammar.g4
 ```
 

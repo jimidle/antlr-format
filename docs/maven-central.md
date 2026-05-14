@@ -9,6 +9,7 @@ account and namespace-verification steps still need to be completed in the Centr
 The parent POM and published modules now provide the Maven Central prerequisites Sonatype expects:
 
 - project URL, license, developer, SCM, and issue tracker metadata
+- explicit child-artifact metadata so each Central artifact page can expose its own documentation and repository links
 - attached `-sources.jar` artifacts for non-`pom` modules
 - attached `-javadoc.jar` artifacts for non-`pom` modules
 - a dedicated `central-publish` profile that:
@@ -21,10 +22,10 @@ The profile is defined in the parent `pom.xml` and applies across the full react
 
 The project is prepared to publish these coordinates:
 
-- `ws.idle:antlr-format-parent:1.0.0`
-- `ws.idle:antlr-format-core:1.0.0`
-- `ws.idle:antlr-format-maven-plugin:1.0.0`
-- `ws.idle:antlr-format-cli:1.0.0`
+- `ws.idle:antlr-format-parent:1.0.1`
+- `ws.idle:antlr-format-core:1.0.1`
+- `ws.idle:antlr-format-maven-plugin:1.0.1`
+- `ws.idle:antlr-format-cli:1.0.1`
 
 ## What cannot currently be completed fully from the command line
 
