@@ -14,14 +14,14 @@ mvn -B --no-transfer-progress -pl antlr-format-cli -am package
 The runnable jar is produced at:
 
 ```text
-antlr-format-cli/target/antlr-format-cli-1.0.1.jar
+antlr-format-cli/target/antlr-format-cli-1.0.2.jar
 ```
 
 The installable CLI archives are produced alongside it:
 
 ```text
-antlr-format-cli/target/antlr-format-cli-1.0.1.zip
-antlr-format-cli/target/antlr-format-cli-1.0.1.tar.gz
+antlr-format-cli/target/antlr-format-cli-1.0.2.zip
+antlr-format-cli/target/antlr-format-cli-1.0.2.tar.gz
 ```
 
 Each archive contains:
@@ -29,7 +29,7 @@ Each archive contains:
 - `bin/antlr-format` – Unix-like wrapper script
 - `bin/antlr-format.cmd` – `cmd.exe` wrapper script
 - `bin/antlr-format.ps1` – PowerShell wrapper script
-- `lib/antlr-format-cli-1.0.1.jar` – runnable shaded jar
+- `lib/antlr-format-cli-1.0.2.jar` – runnable shaded jar
 - `completions/antlr-format.bash` – Bash completion
 - `completions/_antlr-format` – Zsh completion
 - `completions/antlr-format.fish` – Fish completion
@@ -62,19 +62,19 @@ Typical manual install locations after unpacking are:
 Format a grammar to standard output:
 
 ```bash
-java -jar antlr-format-cli/target/antlr-format-cli-1.0.1.jar path/to/Grammar.g4
+java -jar antlr-format-cli/target/antlr-format-cli-1.0.2.jar path/to/Grammar.g4
 ```
 
 Overwrite the input file in place:
 
 ```bash
-java -jar antlr-format-cli/target/antlr-format-cli-1.0.1.jar --write path/to/Grammar.g4
+java -jar antlr-format-cli/target/antlr-format-cli-1.0.2.jar --write path/to/Grammar.g4
 ```
 
 Write to a separate output file:
 
 ```bash
-java -jar antlr-format-cli/target/antlr-format-cli-1.0.1.jar \
+java -jar antlr-format-cli/target/antlr-format-cli-1.0.2.jar \
   --output path/to/Formatted.g4 \
   path/to/Grammar.g4
 ```
@@ -82,7 +82,7 @@ java -jar antlr-format-cli/target/antlr-format-cli-1.0.1.jar \
 Inject the effective formatter options as a comment when the grammar does not already contain formatter directives:
 
 ```bash
-java -jar antlr-format-cli/target/antlr-format-cli-1.0.1.jar \
+java -jar antlr-format-cli/target/antlr-format-cli-1.0.2.jar \
   --add-options \
   path/to/Grammar.g4
 ```

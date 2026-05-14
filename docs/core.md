@@ -9,7 +9,7 @@ It is the right dependency when you want to format ANTLR grammars from your own 
 <dependency>
   <groupId>ws.idle</groupId>
   <artifactId>antlr-format-core</artifactId>
-  <version>1.0.1</version>
+  <version>1.0.2</version>
 </dependency>
 ```
 

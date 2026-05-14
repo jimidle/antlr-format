@@ -10,6 +10,7 @@ import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.List;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.junit.jupiter.api.Test;
@@ -62,6 +63,19 @@ class AntlrFormatMojoTest {
         String actual = Files.readString(grammar, StandardCharsets.UTF_8);
         assertEquals(expectedFormattingForFile(), actual);
         assertTrue(actual.endsWith(System.lineSeparator()));
+    }
+
+    @Test
+    void alreadyFormattedFileKeepsItsTimestamp() throws Exception {
+        Path grammar = writeGrammar(expectedFormattingForFile());
+        FileTime expectedTimestamp = FileTime.fromMillis(1_700_000_000_000L);
+        Files.setLastModifiedTime(grammar, expectedTimestamp);
+        AntlrFormatMojo mojo = configuredMojo(tempDir);
+
+        mojo.execute();
+
+        assertEquals(expectedFormattingForFile(), Files.readString(grammar, StandardCharsets.UTF_8));
+        assertEquals(expectedTimestamp, Files.getLastModifiedTime(grammar));
     }
 
     @Test

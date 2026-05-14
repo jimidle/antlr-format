@@ -11,6 +11,7 @@ import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -59,6 +60,22 @@ class AntlrFormatCliTest {
         String actual = Files.readString(grammar, StandardCharsets.UTF_8);
         assertTrue(actual.endsWith(System.lineSeparator()));
         assertEquals(expectedOutput(UNFORMATTED_GRAMMAR, new FormattingOptions(), false), actual);
+    }
+
+    @Test
+    void writeInPlaceLeavesTimestampUnchangedWhenFormattingIsAlreadyStable() throws Exception {
+        String alreadyFormatted = expectedOutput(UNFORMATTED_GRAMMAR, new FormattingOptions(), false);
+        Path grammar = writeGrammar("Stable.g4", alreadyFormatted);
+        FileTime expectedTimestamp = FileTime.fromMillis(1_700_000_000_000L);
+        Files.setLastModifiedTime(grammar, expectedTimestamp);
+        AntlrFormatCli cli = new AntlrFormatCli();
+        CommandLine commandLine = configuredCommandLine(cli, new StringWriter());
+
+        int exitCode = commandLine.execute("--write", grammar.toString());
+
+        assertEquals(0, exitCode);
+        assertEquals(alreadyFormatted, Files.readString(grammar, StandardCharsets.UTF_8));
+        assertEquals(expectedTimestamp, Files.getLastModifiedTime(grammar));
     }
 
     @Test
