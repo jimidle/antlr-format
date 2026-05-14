@@ -61,14 +61,19 @@ The build is validated in GitHub Actions with Java 21.
 
 ## Maven Central publication
 
-The project is now prepared for publication to Sonatype Central under the `ws.idle` namespace.
+The project is published to Maven Central under the `ws.idle` namespace.
 
-- Central-required POM metadata is present
+- published release: `1.0.1`
+- published modules:
+  - `ws.idle:antlr-format-parent:1.0.1`
+  - `ws.idle:antlr-format-core:1.0.1`
+  - `ws.idle:antlr-format-maven-plugin:1.0.1`
+  - `ws.idle:antlr-format-cli:1.0.1`
+- Central-required POM metadata is present for the parent and child artifacts
 - non-`pom` modules attach source and Javadoc jars
 - the parent POM includes a `central-publish` profile for GPG signing and Sonatype Central upload
 
-Publisher registration and namespace verification are still performed through the Central Portal.
-Once that setup exists, publication itself can be driven from Maven on the command line.
+Initial publisher registration and namespace verification still happen in the Central Portal, but day-to-day release publication can be driven from Maven on the command line once that setup exists.
 
 See [`docs/maven-central.md`](docs/maven-central.md) for the complete setup and release checklist.
 
