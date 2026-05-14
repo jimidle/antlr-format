@@ -7,7 +7,7 @@
     <parent>
         <groupId>ws.idle</groupId>
         <artifactId>antlr-format-parent</artifactId>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -15,6 +15,36 @@
     <name>ANTLR Formatter Maven Plugin</name>
     <packaging>maven-plugin</packaging>
     <description>Maven plugin that formats ANTLR grammar files in place using the shared formatter engine.</description>
+    <url>https://github.com/jimidle/antlr-format/blob/main/docs/maven-plugin.md</url>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>jimidle</id>
+            <name>Jim Idle</name>
+            <email>jimi@idle.ws</email>
+            <url>https://github.com/jimidle</url>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:https://github.com/jimidle/antlr-format.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/jimidle/antlr-format.git</developerConnection>
+        <url>https://github.com/jimidle/antlr-format</url>
+        <tag>v1.0.1</tag>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/jimidle/antlr-format/issues</url>
+    </issueManagement>
 
     <dependencies>
         <dependency>

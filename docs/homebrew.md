@@ -8,6 +8,7 @@ The CLI is now published through the public tap:
 That tap-qualified command is already a one-command install.
 You do **not** need to run `brew tap` separately unless you prefer that workflow.
 However, a tap is still required for now because the formula is not in `homebrew-core`.
+Homebrew's public criteria for new self-submitted formulae currently include significantly higher notability thresholds than this repository currently meets, so a core-formula PR would not be a strong submission today.
 Only a future accepted `homebrew-core` formula would enable:
 
 ```bash
@@ -41,8 +42,8 @@ mvn -B --no-transfer-progress -pl antlr-format-cli -am package
 The CLI module produces these archives:
 
 ```text
-antlr-format-cli/target/antlr-format-cli-1.0.0.zip
-antlr-format-cli/target/antlr-format-cli-1.0.0.tar.gz
+antlr-format-cli/target/antlr-format-cli-1.0.1.zip
+antlr-format-cli/target/antlr-format-cli-1.0.1.tar.gz
 ```
 
 ## Distribution layout
@@ -55,7 +56,7 @@ bin/
   antlr-format.cmd
   antlr-format.ps1
 lib/
-  antlr-format-cli-1.0.0.jar
+  antlr-format-cli-1.0.1.jar
 completions/
   antlr-format.bash
   _antlr-format
@@ -92,18 +93,19 @@ The checked-in template already includes:
 - `license "Apache-2.0"`
 - the install/test logic used by the published tap formula
 
-## Current published formula
+## Published formula source
 
-The published formula in the tap repository currently downloads:
+The tap formula downloads versioned CLI archives from GitHub releases in the main project repository.
+For the `1.0.1` release, the tarball URL is:
 
 ```text
-https://github.com/jimidle/antlr-format/releases/download/v1.0.0/antlr-format-cli-1.0.0.tar.gz
+https://github.com/jimidle/antlr-format/releases/download/v1.0.1/antlr-format-cli-1.0.1.tar.gz
 ```
 
 with SHA-256:
 
 ```text
-2749ea24febcc9bded8cd64c785bf061707e87fb46223835a061003f4ffbfaa1
+d40260680e86880a3736273ea10613f677f8b54bcce88249737448342f07a444
 ```
 
 ## Release maintenance checklist
@@ -128,7 +130,7 @@ For future CLI releases:
 
 This repository provides the build inputs used by the published Homebrew tap:
 
-- a stable release version (`1.0.0`)
+- a stable release version (`1.0.1`)
 - installable wrapper scripts
 - generated shell completions
 - a consistent archive layout that the tap formula can install without repackaging
