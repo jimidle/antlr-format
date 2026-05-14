@@ -8,6 +8,11 @@
 The repository is organized as a Maven multi-module build so the formatter core can be used directly by tools and
 applications while the plugin exposes the same behavior to Maven-based projects.
 
+This rewrite is based on the original formatter project by Mike Lischke:
+
+- original repository: <https://github.com/antlr-ng/antlr-format>
+- original author: Mike Lischke
+
 ## Repository layout
 
 - `antlr-format-core` – formatter engine, API surface, lexer support, and small utility runner
@@ -149,6 +154,9 @@ Examples:
 // $antlr-format alignLabels on, columnLimit 120
 // $antlr-format reset
 ```
+
+For the complete directive reference, defaults, option interactions, and caveats, see
+[`docs/formatter-directives.md`](docs/formatter-directives.md).
 
 ## Development workflow
 
