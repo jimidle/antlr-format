@@ -20,6 +20,12 @@ This rewrite is based on the original formatter project by Mike Lischke:
 - `antlr-format-cli` – standalone `java -jar` command line formatter
 - `antlr-format-maven-plugin` – Maven goal `antlr-format:format`
 
+The CLI module now also produces installable distribution archives containing:
+
+- runnable wrapper scripts for Unix-like shells, Windows `cmd.exe`, and PowerShell
+- generated shell completion files for Bash, Zsh, and Fish
+- a Homebrew formula template that targets the distribution layout but is not published yet
+
 ## Requirements
 
 - JDK 21 or newer
@@ -45,6 +51,13 @@ Build the standalone CLI jar explicitly:
 
 ```bash
 mvn -B --no-transfer-progress -pl antlr-format-cli -am package
+```
+
+That command also builds installable CLI distribution archives at:
+
+```text
+antlr-format-cli/target/antlr-format-cli-1.0.0.zip
+antlr-format-cli/target/antlr-format-cli-1.0.0.tar.gz
 ```
 
 Run only the core module tests:
@@ -108,25 +121,30 @@ mvn -B --no-transfer-progress -pl antlr-format-cli -am package
 Format a grammar to standard output:
 
 ```bash
-java -jar antlr-format-cli/target/antlr-format-cli-1.0.0-SNAPSHOT.jar path/to/Grammar.g4
+java -jar antlr-format-cli/target/antlr-format-cli-1.0.0.jar path/to/Grammar.g4
 ```
 
 Overwrite the input file in place:
 
 ```bash
-java -jar antlr-format-cli/target/antlr-format-cli-1.0.0-SNAPSHOT.jar --write path/to/Grammar.g4
+java -jar antlr-format-cli/target/antlr-format-cli-1.0.0.jar --write path/to/Grammar.g4
 ```
 
 Inject the effective formatter options as a comment when the grammar does not already contain formatter directives:
 
 ```bash
-java -jar antlr-format-cli/target/antlr-format-cli-1.0.0-SNAPSHOT.jar --add-options path/to/Grammar.g4
+java -jar antlr-format-cli/target/antlr-format-cli-1.0.0.jar --add-options path/to/Grammar.g4
 ```
+
+If you prefer an installable command instead of invoking `java -jar` directly, unpack one of the CLI distribution archives and
+run the wrapper from `bin/antlr-format`.
+The archive also contains shell completion files under `completions/` for Bash, Zsh, and Fish.
 
 The CLI exposes a flag for every inline formatter option described in the directive reference, and inline grammar comments
 take precedence over command line flags.
 
 See [`docs/cli.md`](docs/cli.md) for the complete CLI option table, output modes, and precedence rules.
+See [`docs/homebrew.md`](docs/homebrew.md) for the Homebrew-targeted packaging layout and formula-template notes.
 
 ## Using the Maven plugin
 
@@ -138,7 +156,7 @@ The Maven plugin formats grammar files from a source directory, defaulting to `s
 <plugin>
   <groupId>ws.idle</groupId>
   <artifactId>antlr-format-maven-plugin</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.0</version>
   <executions>
     <execution>
       <goals>
@@ -245,7 +263,7 @@ This keeps local verification and remote verification aligned.
 The core module still includes a small helper runner class:
 
 ```bash
-java -cp antlr-format-core/target/antlr-format-core-1.0.0-SNAPSHOT.jar \
+java -cp antlr-format-core/target/antlr-format-core-1.0.0.jar \
   ws.idle.antlr.formatter.FormatterRunner path/to/Grammar.g4
 ```
 

@@ -8,7 +8,7 @@ The `antlr-format-maven-plugin` module formats ANTLR grammars in place from Mave
 <plugin>
   <groupId>ws.idle</groupId>
   <artifactId>antlr-format-maven-plugin</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.0</version>
   <executions>
     <execution>
       <goals>
