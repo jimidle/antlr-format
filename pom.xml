@@ -9,6 +9,37 @@
     <version>1.0.0</version>
     <packaging>pom</packaging>
     <name>ANTLR Formatter Parent</name>
+    <description>Java implementation of the ANTLR grammar formatter, including a reusable core library, standalone CLI, and Maven plugin.</description>
+    <url>https://github.com/jimidle/antlr-format</url>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>jimidle</id>
+            <name>Jim Idle</name>
+            <email>jimi@idle.ws</email>
+            <url>https://github.com/jimidle</url>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:https://github.com/jimidle/antlr-format.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/jimidle/antlr-format.git</developerConnection>
+        <url>https://github.com/jimidle/antlr-format</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/jimidle/antlr-format/issues</url>
+    </issueManagement>
 
     <modules>
         <module>antlr-format-core</module>
@@ -24,6 +55,13 @@
         <jackson.version>2.19.0</jackson.version>
         <picocli.version>4.7.6</picocli.version>
         <maven-plugin-tools.version>3.15.1</maven-plugin-tools.version>
+        <maven.source-plugin.version>3.3.1</maven.source-plugin.version>
+        <maven.javadoc-plugin.version>3.11.2</maven.javadoc-plugin.version>
+        <maven.gpg-plugin.version>3.2.8</maven.gpg-plugin.version>
+        <central-publishing-maven-plugin.version>0.10.0</central-publishing-maven-plugin.version>
+        <central.server.id>central</central.server.id>
+        <central.auto.publish>false</central.auto.publish>
+        <central.skipPublishing>false</central.skipPublishing>
     </properties>
 
     <dependencyManagement>
@@ -72,6 +110,21 @@
                     <artifactId>maven-plugin-plugin</artifactId>
                     <version>${maven-plugin-tools.version}</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>${maven.source-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>${maven.javadoc-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-gpg-plugin</artifactId>
+                    <version>${maven.gpg-plugin.version}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
@@ -85,6 +138,40 @@
             <properties>
                 <java.release>26</java.release>
             </properties>
+        </profile>
+        <profile>
+            <id>central-publish</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <bestPractices>true</bestPractices>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>${central-publishing-maven-plugin.version}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>${central.server.id}</publishingServerId>
+                            <autoPublish>${central.auto.publish}</autoPublish>
+                            <skipPublishing>${central.skipPublishing}</skipPublishing>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>

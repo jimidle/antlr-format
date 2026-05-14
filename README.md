@@ -33,6 +33,19 @@ The CLI module now also produces installable distribution archives containing:
 
 The build is validated in GitHub Actions with Java 21.
 
+## Maven Central publication
+
+The project is now prepared for publication to Sonatype Central under the `ws.idle` namespace.
+
+- Central-required POM metadata is present
+- non-`pom` modules attach source and Javadoc jars
+- the parent POM includes a `central-publish` profile for GPG signing and Sonatype Central upload
+
+Publisher registration and namespace verification are still performed through the Central Portal.
+Once that setup exists, publication itself can be driven from Maven on the command line.
+
+See [`docs/maven-central.md`](docs/maven-central.md) for the complete setup and release checklist.
+
 ## Build from source
 
 Run the full verification build:
@@ -272,5 +285,5 @@ For a supported end-user command line interface, prefer the standalone CLI modul
 
 ## License
 
-Add the project license information here once the repository license file is finalized.
+This project is licensed under the [Apache License 2.0](LICENSE).
 

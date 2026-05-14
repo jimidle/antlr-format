@@ -14,6 +14,7 @@
     <artifactId>antlr-format-cli</artifactId>
     <name>ANTLR Formatter CLI</name>
     <packaging>jar</packaging>
+    <description>Standalone command line interface for formatting ANTLR grammars, including runnable distribution archives.</description>
 
     <dependencies>
         <dependency>
@@ -53,6 +54,30 @@
                                 <argument>${project.build.directory}/generated-distribution/completions</argument>
                             </arguments>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
