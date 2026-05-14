@@ -5,6 +5,15 @@ The CLI is now published through the public tap:
 - tap repository: <https://github.com/jimidle/homebrew-antlr-format>
 - install command: `brew install jimidle/antlr-format/antlr-format`
 
+That tap-qualified command is already a one-command install.
+You do **not** need to run `brew tap` separately unless you prefer that workflow.
+However, a tap is still required for now because the formula is not in `homebrew-core`.
+Only a future accepted `homebrew-core` formula would enable:
+
+```bash
+brew install antlr-format
+```
+
 Homebrew does not require a separate publisher-registration workflow.
 In practice, publishing is done by maintaining a public tap repository that contains the formula and points at public release assets.
 
@@ -79,7 +88,7 @@ When cutting a new Homebrew release, replace these placeholders in the template:
 
 The checked-in template already includes:
 
-- a public homepage URL that passes Homebrew audit even though this source repository is private
+- the public upstream repository homepage
 - `license "Apache-2.0"`
 - the install/test logic used by the published tap formula
 
@@ -88,13 +97,13 @@ The checked-in template already includes:
 The published formula in the tap repository currently downloads:
 
 ```text
-https://github.com/jimidle/homebrew-antlr-format/releases/download/v1.0.0/antlr-format-cli-1.0.0.tar.gz
+https://github.com/jimidle/antlr-format/releases/download/v1.0.0/antlr-format-cli-1.0.0.tar.gz
 ```
 
 with SHA-256:
 
 ```text
-54288ac09263721d41b540d7079d283c8cbb40f658bfaaf96861898906b9023c
+2749ea24febcc9bded8cd64c785bf061707e87fb46223835a061003f4ffbfaa1
 ```
 
 ## Release maintenance checklist
@@ -103,7 +112,7 @@ For future CLI releases:
 
 1. build the CLI distribution archives from this repository
 2. compute the new archive SHA-256
-3. upload the archives to a release in `jimidle/homebrew-antlr-format`
+3. upload the archives to a release in `jimidle/antlr-format`
 4. update `Formula/antlr-format.rb` in the tap repo with the new `url` and `sha256`
 5. run:
 

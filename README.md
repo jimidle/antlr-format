@@ -29,9 +29,17 @@ The CLI module now also produces installable distribution archives containing:
 ## Install with Homebrew
 
 The CLI is published through the public Homebrew tap `jimidle/antlr-format`.
+The simplest install is still a single Homebrew command:
 
 ```bash
 brew install jimidle/antlr-format/antlr-format
+```
+
+That command uses the tap automatically, so a separate `brew tap` step is optional.
+If you want the shorter command below instead, the formula would need to be accepted into `homebrew-core`:
+
+```bash
+brew install antlr-format
 ```
 
 If you prefer to tap first:
