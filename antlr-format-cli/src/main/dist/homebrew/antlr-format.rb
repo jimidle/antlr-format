@@ -1,8 +1,9 @@
 class AntlrFormat < Formula
   desc "Format ANTLR grammar files"
-  homepage "https://github.com/jimidle/antlr-format"
+  homepage "https://central.sonatype.com/artifact/ws.idle/antlr-format-cli"
   url "__ARCHIVE_URL__"
   sha256 "__ARCHIVE_SHA256__"
+  license "Apache-2.0"
   depends_on "openjdk@21"
 
   def install
@@ -23,4 +24,3 @@ class AntlrFormat < Formula
     assert_match "grammar Demo;", output
   end
 end
-
