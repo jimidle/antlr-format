@@ -294,7 +294,11 @@ final class GrammarFormattingSession {
                     }
                 }
                 case ANTLRv4Lexer.OPTIONS, ANTLRv4Lexer.TOKENS, ANTLRv4Lexer.CHANNELS -> {
-                    add(i);
+                    if (Boolean.TRUE.equals(this.options.breakBeforeBraces)) {
+                        addKeywordWithSeparatedBrace(i);
+                    } else {
+                        add(i);
+                    }
                     coalesceWhitespaces = true;
                     if (!inRule) {
                         ++currentIndentation;
@@ -322,6 +326,11 @@ final class GrammarFormattingSession {
                 case ANTLRv4Lexer.BEGIN_ACTION -> {
                     if (formattingDisabled) {
                         continue;
+                    }
+                    if (Boolean.TRUE.equals(this.options.breakBeforeBraces) && !inRule) {
+                        removeTrailingWhitespaces();
+                        addLineBreak(false);
+                        pushCurrentIndentation(false);
                     }
                     if (Boolean.TRUE.equals(this.options.alignTrailers)) {
                         addAlignmentEntry(FormatterAlignmentType.TRAILERS);
@@ -1115,6 +1124,49 @@ final class GrammarFormattingSession {
         }
         ranges.add(new int[] { tokenStart(start), tokenStop(stop) });
         outputPipeline.add(MARKER_RANGE - currentRangeIndex++);
+    }
+
+    /**
+     * Emits literal text through the output pipeline and updates rendered position tracking.
+     *
+     * @param text the text to append
+     */
+    private void addText(String text) {
+        if (text.isEmpty()) {
+            return;
+        }
+        if (text.contains("\n")) {
+            String[] parts = text.split("\\n", -1);
+            currentLine += parts.length - 1;
+            currentColumn = computeLineLength(parts[parts.length - 1]);
+        } else {
+            currentColumn += computeLineLength(text);
+        }
+        int whitespaceIndex = MARKER_WHITESPACE_BLOCK - whitespaceList.size();
+        outputPipeline.add(whitespaceIndex);
+        whitespaceList.add(text);
+    }
+
+    /**
+     * Emits a keyword token such as {@code options{} } with the opening brace moved to the next line.
+     *
+     * @param tokenIndex the token index containing the keyword and opening brace
+     */
+    private void addKeywordWithSeparatedBrace(int tokenIndex) {
+        String text = tokenText(tokenAt(tokenIndex));
+        int braceIndex = text.lastIndexOf('{');
+        if (braceIndex < 0) {
+            add(tokenIndex);
+            return;
+        }
+
+        String prefix = text.substring(0, braceIndex).stripTrailing();
+        if (!prefix.isEmpty()) {
+            addText(prefix);
+        }
+        addLineBreak(false);
+        pushCurrentIndentation(false);
+        addText("{");
     }
 
     /** Emits a single space when spacing is currently allowed. */

@@ -93,7 +93,7 @@ The following table lists every inline option currently recognized by the format
 | --- | --- | --- | --- |
 | `alignTrailingComments` | `on` / `off` | `false` | Aligns trailing **line comments** when they appear after content on a line. Ignored when `alignTrailers` is enabled. |
 | `allowShortBlocksOnASingleLine` | `on` / `off` | `true` | Allows short parenthesized blocks and simple alternatives to remain on one line when they fit within the formatter's heuristics. |
-| `breakBeforeBraces` | `on` / `off` | `false` | **Currently accepted but has no formatting effect** in the Java implementation. |
+| `breakBeforeBraces` | `on` / `off` | `false` | Moves opening braces for braced keyword blocks such as `options {` and top-level named-action blocks such as `@parser::members {` onto the next line. |
 | `columnLimit` | integer | `100` | Soft line-width target used by comment reflow and single-line heuristics. Use positive values. |
 | `continuationIndentWidth` | integer | `4` | Extra indentation applied when a token must wrap because the current line would exceed `columnLimit`. |
 | `indentWidth` | integer | `4` | Number of spaces per indentation level when `useTab` is `off`. |
@@ -297,10 +297,23 @@ Do **not** rely on:
 
 Use `on` / `off` instead.
 
-### `breakBeforeBraces` is currently accepted but unused
+### `breakBeforeBraces` only affects block-style opening braces
 
-The current Java implementation parses and preserves `breakBeforeBraces`, but it does not currently alter formatter output.
-That makes it safe to document as supported input, but it should be considered a no-op for now.
+`breakBeforeBraces` is implemented for brace-bearing block constructs such as:
+
+- `options { ... }`
+- `tokens { ... }`
+- `channels { ... }`
+- top-level named-action blocks such as `@parser::members { ... }`
+
+It is **not** a blanket “move every `{` to a new line” rule.
+In particular, inline rule actions such as:
+
+```antlr
+a: 'a' {doSomething();};
+```
+
+remain inline.
 
 ### Invalid directive entries are visible in output
 

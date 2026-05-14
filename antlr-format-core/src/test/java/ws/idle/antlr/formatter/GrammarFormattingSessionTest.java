@@ -1,6 +1,7 @@
 package ws.idle.antlr.formatter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -66,6 +67,53 @@ class GrammarFormattingSessionTest {
         assertTrue(result.text().contains("// $antlr-format off\nb :    'b'   |'c'  ;"));
         assertTrue(result.text().contains("// $antlr-format on"));
         assertTrue(result.text().contains("c"));
+    }
+
+    @Test
+    void breakBeforeBracesMovesKeywordBlockBraceToOwnLine() {
+        String grammar = """
+            grammar Demo;
+            options { superClass = BaseParser; }
+            a: 'a';
+            """;
+        FormattingOptions options = new FormattingOptions();
+        options.breakBeforeBraces = true;
+
+        FormattingResult result = format(grammar, options, false);
+
+        assertTrue(result.text().contains("options\n{"));
+        assertFalse(result.text().contains("options {"));
+    }
+
+    @Test
+    void breakBeforeBracesMovesTopLevelNamedActionBraceToOwnLine() {
+        String grammar = """
+            grammar Demo;
+            @parser::members {int value() { return 1; }}
+            a: 'a';
+            """;
+        FormattingOptions options = new FormattingOptions();
+        options.breakBeforeBraces = true;
+
+        FormattingResult result = format(grammar, options, false);
+
+        assertTrue(result.text().contains("@parser::members\n{"));
+        assertFalse(result.text().contains("@parser::members {"));
+    }
+
+    @Test
+    void breakBeforeBracesDoesNotMoveInlineRuleActionBrace() {
+        String grammar = """
+            grammar Demo;
+            a: 'a' {doIt();};
+            """;
+        FormattingOptions options = new FormattingOptions();
+        options.breakBeforeBraces = true;
+
+        FormattingResult result = format(grammar, options, false);
+
+        assertTrue(result.text().contains("'a' {doIt();}"));
+        assertFalse(result.text().contains("'a'\n{"));
     }
 
     private static FormattingResult format(String grammar, FormattingOptions options, boolean addOptionsAsComment) {
