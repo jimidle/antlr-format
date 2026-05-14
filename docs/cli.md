@@ -1,6 +1,6 @@
 # Command line interface
 
-The `antlr-format-cli` module packages the formatter as a runnable jar that can be launched with `java -jar`.
+The `antlr-format-cli` module packages the formatter both as a runnable jar and as installable distribution archives.
 It is the supported command line surface for the project.
 
 ## Build the CLI jar
@@ -14,27 +14,67 @@ mvn -B --no-transfer-progress -pl antlr-format-cli -am package
 The runnable jar is produced at:
 
 ```text
-antlr-format-cli/target/antlr-format-cli-1.0.0-SNAPSHOT.jar
+antlr-format-cli/target/antlr-format-cli-1.0.0.jar
 ```
+
+The installable CLI archives are produced alongside it:
+
+```text
+antlr-format-cli/target/antlr-format-cli-1.0.0.zip
+antlr-format-cli/target/antlr-format-cli-1.0.0.tar.gz
+```
+
+Each archive contains:
+
+- `bin/antlr-format` – Unix-like wrapper script
+- `bin/antlr-format.cmd` – `cmd.exe` wrapper script
+- `bin/antlr-format.ps1` – PowerShell wrapper script
+- `lib/antlr-format-cli-1.0.0.jar` – runnable shaded jar
+- `completions/antlr-format.bash` – Bash completion
+- `completions/_antlr-format` – Zsh completion
+- `completions/antlr-format.fish` – Fish completion
+- `homebrew/antlr-format.rb` – formula template for a future Homebrew release
+
+## Using the installable wrapper
+
+After unpacking either distribution archive, run the formatter through the wrapper instead of calling `java -jar` directly:
+
+```bash
+./bin/antlr-format path/to/Grammar.g4
+```
+
+The Unix-like wrapper honors `JAVA_HOME` when present and also accepts extra JVM arguments through
+`ANTLR_FORMAT_JAVA_OPTS`.
+
+## Shell completion files
+
+The CLI build generates completion files for Bash, Zsh, and Fish from the current option set.
+This keeps the packaged completions aligned with the CLI flags that the formatter actually supports.
+
+Typical manual install locations after unpacking are:
+
+- Bash: copy `completions/antlr-format.bash` into your Bash completion directory and source it
+- Zsh: copy `completions/_antlr-format` into a directory on `fpath`
+- Fish: copy `completions/antlr-format.fish` into `~/.config/fish/completions/`
 
 ## Basic usage
 
 Format a grammar to standard output:
 
 ```bash
-java -jar antlr-format-cli/target/antlr-format-cli-1.0.0-SNAPSHOT.jar path/to/Grammar.g4
+java -jar antlr-format-cli/target/antlr-format-cli-1.0.0.jar path/to/Grammar.g4
 ```
 
 Overwrite the input file in place:
 
 ```bash
-java -jar antlr-format-cli/target/antlr-format-cli-1.0.0-SNAPSHOT.jar --write path/to/Grammar.g4
+java -jar antlr-format-cli/target/antlr-format-cli-1.0.0.jar --write path/to/Grammar.g4
 ```
 
 Write to a separate output file:
 
 ```bash
-java -jar antlr-format-cli/target/antlr-format-cli-1.0.0-SNAPSHOT.jar \
+java -jar antlr-format-cli/target/antlr-format-cli-1.0.0.jar \
   --output path/to/Formatted.g4 \
   path/to/Grammar.g4
 ```
@@ -42,7 +82,7 @@ java -jar antlr-format-cli/target/antlr-format-cli-1.0.0-SNAPSHOT.jar \
 Inject the effective formatter options as a comment when the grammar does not already contain formatter directives:
 
 ```bash
-java -jar antlr-format-cli/target/antlr-format-cli-1.0.0-SNAPSHOT.jar \
+java -jar antlr-format-cli/target/antlr-format-cli-1.0.0.jar \
   --add-options \
   path/to/Grammar.g4
 ```
@@ -129,6 +169,7 @@ This avoids duplicating or conflicting with inline configuration already present
 ## Related documentation
 
 - [Project README](../README.md)
+- [Homebrew packaging notes](homebrew.md)
 - [Maven plugin guide](maven-plugin.md)
 - [Formatter directives reference](formatter-directives.md)
 

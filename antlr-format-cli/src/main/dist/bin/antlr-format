@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+
+set -eu
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+APP_HOME=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+
+if [ -n "${JAVA_HOME:-}" ] && [ -x "${JAVA_HOME}/bin/java" ]; then
+  JAVA_BIN="${JAVA_HOME}/bin/java"
+else
+  JAVA_BIN="java"
+fi
+
+JAR_PATH="${APP_HOME}/lib/${project.build.finalName}.jar"
+
+if [ -n "${ANTLR_FORMAT_JAVA_OPTS:-}" ]; then
+  # shellcheck disable=SC2086
+  exec "$JAVA_BIN" $ANTLR_FORMAT_JAVA_OPTS -jar "$JAR_PATH" "$@"
+fi
+
+exec "$JAVA_BIN" -jar "$JAR_PATH" "$@"
+
