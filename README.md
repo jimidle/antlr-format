@@ -63,12 +63,12 @@ The build is validated in GitHub Actions with Java 21.
 
 The project is published to Maven Central under the `ws.idle` namespace.
 
-- published release: `1.0.1`
+- published release: `1.0.2`
 - published modules:
-  - `ws.idle:antlr-format-parent:1.0.1`
-  - `ws.idle:antlr-format-core:1.0.1`
-  - `ws.idle:antlr-format-maven-plugin:1.0.1`
-  - `ws.idle:antlr-format-cli:1.0.1`
+  - `ws.idle:antlr-format-parent:1.0.2`
+  - `ws.idle:antlr-format-core:1.0.2`
+  - `ws.idle:antlr-format-maven-plugin:1.0.2`
+  - `ws.idle:antlr-format-cli:1.0.2`
 - Central-required POM metadata is present for the parent and child artifacts
 - non-`pom` modules attach source and Javadoc jars
 - the parent POM includes a `central-publish` profile for GPG signing and Sonatype Central upload
@@ -100,8 +100,8 @@ mvn -B --no-transfer-progress -pl antlr-format-cli -am package
 That command also builds installable CLI distribution archives at:
 
 ```text
-antlr-format-cli/target/antlr-format-cli-1.0.1.zip
-antlr-format-cli/target/antlr-format-cli-1.0.1.tar.gz
+antlr-format-cli/target/antlr-format-cli-1.0.2.zip
+antlr-format-cli/target/antlr-format-cli-1.0.2.tar.gz
 ```
 
 Run only the core module tests:
@@ -167,19 +167,19 @@ mvn -B --no-transfer-progress -pl antlr-format-cli -am package
 Format a grammar to standard output:
 
 ```bash
-java -jar antlr-format-cli/target/antlr-format-cli-1.0.1.jar path/to/Grammar.g4
+java -jar antlr-format-cli/target/antlr-format-cli-1.0.2.jar path/to/Grammar.g4
 ```
 
 Overwrite the input file in place:
 
 ```bash
-java -jar antlr-format-cli/target/antlr-format-cli-1.0.1.jar --write path/to/Grammar.g4
+java -jar antlr-format-cli/target/antlr-format-cli-1.0.2.jar --write path/to/Grammar.g4
 ```
 
 Inject the effective formatter options as a comment when the grammar does not already contain formatter directives:
 
 ```bash
-java -jar antlr-format-cli/target/antlr-format-cli-1.0.1.jar --add-options path/to/Grammar.g4
+java -jar antlr-format-cli/target/antlr-format-cli-1.0.2.jar --add-options path/to/Grammar.g4
 ```
 
 If you prefer an installable command instead of invoking `java -jar` directly, unpack one of the CLI distribution archives and
@@ -208,7 +208,7 @@ The Maven plugin formats grammar files from a source directory, defaulting to `s
 <plugin>
   <groupId>ws.idle</groupId>
   <artifactId>antlr-format-maven-plugin</artifactId>
-  <version>1.0.1</version>
+  <version>1.0.2</version>
   <executions>
     <execution>
       <goals>
@@ -315,7 +315,7 @@ This keeps local verification and remote verification aligned.
 The core module still includes a small helper runner class:
 
 ```bash
-java -cp antlr-format-core/target/antlr-format-core-1.0.1.jar \
+java -cp antlr-format-core/target/antlr-format-core-1.0.2.jar \
   ws.idle.antlr.formatter.FormatterRunner path/to/Grammar.g4
 ```
 

@@ -139,6 +139,11 @@ public final class AntlrFormatCli implements Callable<Integer> {
         if (parent != null) {
             Files.createDirectories(parent);
         }
+
+        if (Files.exists(destination) && Files.readString(destination, encoding).equals(text)) {
+            return;
+        }
+
         Files.writeString(destination, text, encoding);
     }
 }

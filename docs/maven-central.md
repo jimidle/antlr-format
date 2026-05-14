@@ -1,17 +1,17 @@
 # Maven Central publication
 
 This project is published to Sonatype Central under the `ws.idle` namespace.
-The `ws.idle` namespace is already verified, the Maven publishing setup is active, and release `1.0.1`
+The `ws.idle` namespace is already verified, the Maven publishing setup is active, and release `1.0.2`
 is live in Central.
 
 ## Current published coordinates
 
 The current published release is:
 
-- `ws.idle:antlr-format-parent:1.0.1`
-- `ws.idle:antlr-format-core:1.0.1`
-- `ws.idle:antlr-format-maven-plugin:1.0.1`
-- `ws.idle:antlr-format-cli:1.0.1`
+- `ws.idle:antlr-format-parent:1.0.2`
+- `ws.idle:antlr-format-core:1.0.2`
+- `ws.idle:antlr-format-maven-plugin:1.0.2`
+- `ws.idle:antlr-format-cli:1.0.2`
 
 Useful Central pages:
 
@@ -195,7 +195,7 @@ publish with:
 mvn -B --no-transfer-progress -Pcentral-publish deploy
 ```
 
-For the fully automated publication flow used for release `1.0.1`, run:
+For the fully automated publication flow used for release `1.0.2`, run:
 
 ```bash
 mvn -B --no-transfer-progress \
