@@ -24,7 +24,24 @@ The CLI module now also produces installable distribution archives containing:
 
 - runnable wrapper scripts for Unix-like shells, Windows `cmd.exe`, and PowerShell
 - generated shell completion files for Bash, Zsh, and Fish
-- a Homebrew formula template that targets the distribution layout but is not published yet
+- a Homebrew formula template that matches the published tap package
+
+## Install with Homebrew
+
+The CLI is published through the public Homebrew tap `jimidle/antlr-format`.
+
+```bash
+brew install jimidle/antlr-format/antlr-format
+```
+
+If you prefer to tap first:
+
+```bash
+brew tap jimidle/antlr-format
+brew install antlr-format
+```
+
+See [`docs/homebrew.md`](docs/homebrew.md) for the packaging layout and tap maintenance notes.
 
 ## Requirements
 
@@ -152,6 +169,12 @@ java -jar antlr-format-cli/target/antlr-format-cli-1.0.0.jar --add-options path/
 If you prefer an installable command instead of invoking `java -jar` directly, unpack one of the CLI distribution archives and
 run the wrapper from `bin/antlr-format`.
 The archive also contains shell completion files under `completions/` for Bash, Zsh, and Fish.
+
+The same packaged CLI is also available via Homebrew:
+
+```bash
+brew install jimidle/antlr-format/antlr-format
+```
 
 The CLI exposes a flag for every inline formatter option described in the directive reference, and inline grammar comments
 take precedence over command line flags.

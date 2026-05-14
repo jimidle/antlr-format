@@ -1,7 +1,25 @@
 # Homebrew packaging notes
 
-The CLI is now packaged with a Homebrew-oriented distribution layout, but it is **not** published to Homebrew yet.
-This document describes the artifacts produced by the build so the next PR can wire them into a release workflow.
+The CLI is now published through the public tap:
+
+- tap repository: <https://github.com/jimidle/homebrew-antlr-format>
+- install command: `brew install jimidle/antlr-format/antlr-format`
+
+Homebrew does not require a separate publisher-registration workflow.
+In practice, publishing is done by maintaining a public tap repository that contains the formula and points at public release assets.
+
+## Install from Homebrew
+
+```bash
+brew install jimidle/antlr-format/antlr-format
+```
+
+Or, if you prefer to add the tap first:
+
+```bash
+brew tap jimidle/antlr-format
+brew install antlr-format
+```
 
 ## Build the CLI distribution archives
 
@@ -54,27 +72,55 @@ antlr-format-cli/src/main/dist/homebrew/antlr-format.rb
 
 The packaged copy is also embedded in each CLI distribution archive under `homebrew/antlr-format.rb`.
 
-Before publishing, the next PR should replace these placeholders in the template:
+When cutting a new Homebrew release, replace these placeholders in the template:
 
 - `__ARCHIVE_URL__`
 - `__ARCHIVE_SHA256__`
 
-## What this PR prepares
+The checked-in template already includes:
 
-This PR intentionally stops short of publishing anything.
-It prepares Homebrew publication by ensuring the CLI build already emits:
+- a public homepage URL that passes Homebrew audit even though this source repository is private
+- `license "Apache-2.0"`
+- the install/test logic used by the published tap formula
+
+## Current published formula
+
+The published formula in the tap repository currently downloads:
+
+```text
+https://github.com/jimidle/homebrew-antlr-format/releases/download/v1.0.0/antlr-format-cli-1.0.0.tar.gz
+```
+
+with SHA-256:
+
+```text
+54288ac09263721d41b540d7079d283c8cbb40f658bfaaf96861898906b9023c
+```
+
+## Release maintenance checklist
+
+For future CLI releases:
+
+1. build the CLI distribution archives from this repository
+2. compute the new archive SHA-256
+3. upload the archives to a release in `jimidle/homebrew-antlr-format`
+4. update `Formula/antlr-format.rb` in the tap repo with the new `url` and `sha256`
+5. run:
+
+   ```bash
+   brew audit --strict --online jimidle/antlr-format/antlr-format
+   brew install jimidle/antlr-format/antlr-format
+   brew test antlr-format
+   ```
+
+6. commit and push the tap update
+
+## What the repository already provides
+
+This repository provides the build inputs used by the published Homebrew tap:
 
 - a stable release version (`1.0.0`)
 - installable wrapper scripts
 - generated shell completions
-- a consistent archive layout that a future formula can install without repackaging
-
-## Next PR ideas
-
-The follow-up Homebrew PR can focus on:
-
-1. attaching the CLI tarball to a GitHub release
-2. filling in the final `url` and `sha256` in the formula template
-3. deciding whether the formula lives in this repository or a separate tap
-4. optionally adding a CI job that validates the formula against the release archive
+- a consistent archive layout that the tap formula can install without repackaging
 
