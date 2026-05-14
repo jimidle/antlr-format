@@ -14,16 +14,27 @@ public abstract class LexerAdaptor extends Lexer {
 
     private int currentRuleType = Token.INVALID_TYPE;
 
+    /**
+     * Creates the adaptor for a generated lexer instance.
+     *
+     * @param input the input character stream
+     */
     protected LexerAdaptor(CharStream input) {
         super(input);
     }
 
+    /** Resets the lexer and clears the tracked rule-type state. */
     @Override
     public void reset() {
         currentRuleType = Token.INVALID_TYPE;
         super.reset();
     }
 
+    /**
+     * Emits a token while maintaining the additional state needed by the ANTLR v4 lexer grammar.
+     *
+     * @return the emitted token
+     */
     @Override
     public Token emit() {
         if ((getType() == ANTLRv4Lexer.OPTIONS || getType() == ANTLRv4Lexer.TOKENS || getType() == ANTLRv4Lexer.CHANNELS)
@@ -60,6 +71,7 @@ public abstract class LexerAdaptor extends Lexer {
         return super.emit();
     }
 
+    /** Enters the appropriate lexer mode for an argument or lexer character set. */
     protected void handleBeginArgument() {
         if (currentRuleType == ANTLRv4Lexer.TOKEN_REF) {
             pushMode(ANTLRv4Lexer.LexerCharSet);
@@ -69,6 +81,7 @@ public abstract class LexerAdaptor extends Lexer {
         }
     }
 
+    /** Leaves the current argument mode and rewrites nested content tokens when needed. */
     protected void handleEndArgument() {
         popMode();
         if (!_modeStack.isEmpty()) {
@@ -76,6 +89,7 @@ public abstract class LexerAdaptor extends Lexer {
         }
     }
 
+    /** Restores action-mode state and rewrites nested action terminators when needed. */
     protected void handleEndAction() {
         int oldMode = _mode;
         int newMode = popMode();

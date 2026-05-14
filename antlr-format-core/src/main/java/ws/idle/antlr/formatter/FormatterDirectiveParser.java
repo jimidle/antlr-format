@@ -27,7 +27,14 @@ final class FormatterDirectiveParser {
         "columnLimit", "continuationIndentWidth", "indentWidth", "maxEmptyLinesToKeep", "tabWidth", "minEmptyLines"
     );
 
+    /** Result of parsing a formatter directive comment. */
     record ParseResult(boolean containsFormattingOptions, List<Directive> directives) {
+
+        /**
+         * Returns an empty parse result for comments that do not contain formatter directives.
+         *
+         * @return a parse result with no directives
+         */
         static ParseResult none() {
             return new ParseResult(false, List.of());
         }
@@ -58,9 +65,16 @@ final class FormatterDirectiveParser {
     record InvalidDirective() implements Directive {
     }
 
+    /** Prevents instantiation of the utility class. */
     private FormatterDirectiveParser() {
     }
 
+    /**
+     * Parses a comment and extracts any embedded {@code $antlr-format} directives.
+     *
+     * @param commentText the raw comment text
+     * @return the parse result, including any recognized directives
+     */
     static ParseResult parse(String commentText) {
         String text = stripCommentMarkup(commentText);
         if (!text.startsWith(FORMAT_INTRODUCER)) {
@@ -101,6 +115,13 @@ final class FormatterDirectiveParser {
         return new ParseResult(containsFormattingOptions, List.copyOf(directives));
     }
 
+    /**
+     * Parses a single directive key/value pair.
+     *
+     * @param key the directive key
+     * @param value the raw directive value
+     * @return the parsed directive representation
+     */
     private static Directive parseDirective(String key, String value) {
         return switch (key) {
             case "reset" -> new ResetDirective();
@@ -120,6 +141,13 @@ final class FormatterDirectiveParser {
         };
     }
 
+    /**
+     * Parses a boolean formatter option.
+     *
+     * @param key the option name
+     * @param value the raw boolean value
+     * @return the parsed boolean directive or an invalid directive marker
+     */
     private static Directive parseBooleanOption(String key, String value) {
         if ("true".equals(value) || "on".equals(value)) {
             return new BooleanOptionDirective(key, true);
@@ -130,6 +158,13 @@ final class FormatterDirectiveParser {
         return new InvalidDirective();
     }
 
+    /**
+     * Parses an integer formatter option.
+     *
+     * @param key the option name
+     * @param value the raw numeric value
+     * @return the parsed integer directive or an invalid directive marker
+     */
     private static Directive parseIntOption(String key, String value) {
         try {
             return new IntOptionDirective(key, Integer.parseInt(value));
@@ -138,6 +173,12 @@ final class FormatterDirectiveParser {
         }
     }
 
+    /**
+     * Parses a colon alignment directive.
+     *
+     * @param value the raw alignment value
+     * @return the parsed directive or an invalid directive marker
+     */
     private static Directive parseColonAlignment(String value) {
         return switch (value) {
             case "none" -> new ColonAlignmentDirective(ColonAlignment.NONE);
@@ -147,6 +188,12 @@ final class FormatterDirectiveParser {
         };
     }
 
+    /**
+     * Parses a semicolon alignment directive.
+     *
+     * @param value the raw alignment value
+     * @return the parsed directive or an invalid directive marker
+     */
     private static Directive parseSemicolonAlignment(String value) {
         return switch (value) {
             case "none" -> new SemicolonAlignmentDirective(SemicolonAlignment.NONE);
@@ -156,6 +203,12 @@ final class FormatterDirectiveParser {
         };
     }
 
+    /**
+     * Removes comment delimiters so only the directive body remains.
+     *
+     * @param commentText the raw comment text
+     * @return the comment body with leading and trailing markup removed where possible
+     */
     private static String stripCommentMarkup(String commentText) {
         if (commentText.startsWith("//")) {
             return commentText.substring(2).trim();

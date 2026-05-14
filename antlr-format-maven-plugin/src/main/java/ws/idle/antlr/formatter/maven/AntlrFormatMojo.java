@@ -52,6 +52,12 @@ public class AntlrFormatMojo extends AbstractMojo {
     @Parameter
     private FormattingOptions lexer;
 
+    /**
+     * Executes the Maven goal by finding matching grammar files and formatting them in place.
+     *
+     * @throws MojoExecutionException if file scanning, reading, writing, or charset resolution fails
+     * @throws MojoFailureException reserved for future validation failures
+     */
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (skip) {
@@ -115,6 +121,15 @@ public class AntlrFormatMojo extends AbstractMojo {
         }
     }
 
+    /**
+     * Collects grammar files under the configured source directory that match the include and exclude globs.
+     *
+     * @param root the source directory to scan
+     * @param includeGlobs the include glob patterns
+     * @param excludeGlobs the exclude glob patterns
+     * @return the sorted list of matching files
+     * @throws MojoExecutionException if the directory cannot be scanned
+     */
     private static List<Path> collectFiles(Path root, List<String> includeGlobs, List<String> excludeGlobs)
         throws MojoExecutionException {
 
@@ -148,6 +163,13 @@ public class AntlrFormatMojo extends AbstractMojo {
         return result;
     }
 
+    /**
+     * Resolves the configured encoding into a {@link Charset}.
+     *
+     * @param encoding the configured encoding name, or {@code null} to use UTF-8
+     * @return the resolved charset
+     * @throws MojoExecutionException if the configured charset name is unsupported
+     */
     private static Charset resolveCharset(String encoding) throws MojoExecutionException {
         String charsetName = encoding == null ? StandardCharsets.UTF_8.name() : encoding;
         try {

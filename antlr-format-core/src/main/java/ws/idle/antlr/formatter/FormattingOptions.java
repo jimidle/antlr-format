@@ -33,6 +33,11 @@ public final class FormattingOptions {
     public Boolean alignLabels;
     public Boolean alignTrailers;
 
+    /**
+     * Creates a fully populated options instance using the formatter's default values.
+     *
+     * @return a new options instance containing all default settings
+     */
     public static FormattingOptions defaults() {
         FormattingOptions options = new FormattingOptions();
         options.disabled = false;
@@ -64,6 +69,12 @@ public final class FormattingOptions {
         return options;
     }
 
+    /**
+     * Merges the non-{@code null} values from another options object into this one.
+     *
+     * @param other the sparse options object to merge from
+     * @return this instance for chaining
+     */
     public FormattingOptions mergeFrom(FormattingOptions other) {
         if (other == null) {
             return this;
@@ -99,6 +110,14 @@ public final class FormattingOptions {
         return this;
     }
 
+    /**
+     * Chooses the first non-{@code null} value.
+     *
+     * @param lhs the preferred value
+     * @param rhs the fallback value
+     * @param <T> the option type
+     * @return {@code lhs} when present, otherwise {@code rhs}
+     */
     private static <T> T orElse(T lhs, T rhs) {
         return lhs != null ? lhs : rhs;
     }

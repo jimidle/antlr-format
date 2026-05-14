@@ -12,6 +12,11 @@ public enum SemicolonAlignment {
         this.externalName = externalName;
     }
 
+    /**
+     * Returns the serialized option value used in formatter directives and configuration comments.
+     *
+     * @return the external name for this alignment mode
+     */
     public String externalName() {
         return externalName;
     }
