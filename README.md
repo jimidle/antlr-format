@@ -1,25 +1,94 @@
-# antlr-format (Java)
+# antlr-format
 
-Java rewrite of `antlr-format` as a Maven plugin, with the formatter logic placed in a reusable core module.
+`antlr-format` is a Java implementation of the ANTLR grammar formatter, packaged both as:
 
-## Modules
+- a reusable formatter library
+- a Maven plugin for formatting `.g4` files in place during builds or from the command line
 
-- `antlr-format-core`: formatter API + ANTLR lexer generation.
-- `antlr-format-maven-plugin`: Maven goal `antlr-format:format`.
+The repository is organized as a Maven multi-module build so the formatter core can be used directly by tools and
+applications while the plugin exposes the same behavior to Maven-based projects.
 
-## Quick Start
+## Repository layout
+
+- `antlr-format-core` – formatter engine, API surface, lexer support, and small utility runner
+- `antlr-format-maven-plugin` – Maven goal `antlr-format:format`
+
+## Requirements
+
+- JDK 21 or newer
+- Maven 3.9+ recommended
+
+The build is validated in GitHub Actions with Java 21.
+
+## Build from source
+
+Run the full verification build:
 
 ```bash
-mvn -q test
-mvn -q -pl antlr-format-maven-plugin -am package
+mvn -B --no-transfer-progress verify
 ```
 
-## Contributing
+Build the Maven plugin artifact explicitly:
 
-This repository uses protected `main`, short-lived feature branches, and pull requests.
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the branch naming convention and CLI workflow.
+```bash
+mvn -B --no-transfer-progress -pl antlr-format-maven-plugin -am package
+```
 
-Example plugin usage in a project:
+Run only the core module tests:
+
+```bash
+mvn -B --no-transfer-progress -pl antlr-format-core test
+```
+
+## Using the formatter core API
+
+The core module exposes a small API centered around `GrammarFormatter`, `FormattingOptions`, and
+`AntlrFormatterService`.
+
+### Format a grammar string directly
+
+```java
+FormattingOptions options = new FormattingOptions();
+options.reflowComments = true;
+options.alignLabels = true;
+
+GrammarFormatter formatter = new GrammarFormatter(grammarText);
+FormattingResult result = formatter.formatGrammar(options);
+
+String formatted = result.text();
+```
+
+### Format with grammar-kind-aware configuration
+
+`AntlrFormatterService` can automatically choose between a main option set and a lexer-specific option set:
+
+```java
+FormattingConfiguration configuration = new FormattingConfiguration();
+configuration.main = FormattingOptions.defaults();
+
+FormattingOptions lexerOptions = new FormattingOptions();
+lexerOptions.alignTrailers = true;
+configuration.lexer = lexerOptions;
+
+AntlrFormatterService service = new AntlrFormatterService();
+FormattingResult result = service.format(grammarText, configuration, false, 0, Integer.MAX_VALUE);
+```
+
+### Emit formatter options as a comment
+
+You can serialize options into an `$antlr-format` comment block:
+
+```java
+String comment = GrammarFormatter.convertToComment(FormattingOptions.defaults());
+```
+
+Or ask `GrammarFormatter` / `AntlrFormatterService` to inject the effective options automatically when formatting.
+
+## Using the Maven plugin
+
+The Maven plugin formats grammar files from a source directory, defaulting to `src/main/antlr4`.
+
+### Basic configuration
 
 ```xml
 <plugin>
@@ -37,19 +106,82 @@ Example plugin usage in a project:
     <sourceDirectory>${project.basedir}/src/main/antlr4</sourceDirectory>
     <addOptions>true</addOptions>
     <main>
-      <reflowComments>false</reflowComments>
+      <reflowComments>true</reflowComments>
       <alignLabels>true</alignLabels>
     </main>
   </configuration>
 </plugin>
 ```
 
-## Status
+### Plugin options
 
-This is the initial migration scaffold:
+The plugin supports these top-level parameters:
 
-- Maven multi-module build is in place.
-- ANTLR lexer generation and adapter are wired.
-- Public core API is implemented.
-- Full TypeScript formatting pipeline parity is still in progress.
+- `sourceDirectory` – root directory to scan for grammars
+- `includes` – include glob patterns, defaulting to `**/*.g4`
+- `excludes` – exclude glob patterns
+- `skip` – skip formatting entirely
+- `addOptions` – emit the effective formatter options as a directive comment
+- `dryRun` – report files that would change without rewriting them
+- `encoding` – source file encoding, default `UTF-8`
+- `main` – main formatter option set
+- `lexer` – optional lexer-specific formatter option set
+
+### Dry-run example
+
+```bash
+mvn -B --no-transfer-progress antlr-format:format -Dantlr-format.dryRun=true
+```
+
+## Formatter directives inside grammars
+
+The formatter understands `$antlr-format` directives embedded in comments. These can be used to:
+
+- turn formatting on or off for selected regions
+- reset to default options
+- override individual options inline
+
+Examples:
+
+```antlr
+// $antlr-format off
+// $antlr-format on
+// $antlr-format alignLabels on, columnLimit 120
+// $antlr-format reset
+```
+
+## Development workflow
+
+This repository uses a protected `main` branch and a feature-branch + pull-request workflow.
+
+- direct pushes to `main` are blocked
+- pull requests are required
+- the GitHub Actions `build` check must pass before merge
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for branch naming and the recommended command-line workflow.
+
+## Continuous integration
+
+GitHub Actions runs the following command for pushes to `main` and for pull requests targeting `main`:
+
+```bash
+mvn -B --no-transfer-progress verify
+```
+
+This keeps local verification and remote verification aligned.
+
+## Command-line helper runner
+
+The core module currently includes a small helper runner class:
+
+```bash
+java -cp antlr-format-core/target/antlr-format-core-1.0.0-SNAPSHOT.jar \
+  ws.idle.antlr.formatter.FormatterRunner path/to/Grammar.g4
+```
+
+That runner is intentionally minimal and primarily useful for local experimentation.
+
+## License
+
+Add the project license information here once the repository license file is finalized.
 

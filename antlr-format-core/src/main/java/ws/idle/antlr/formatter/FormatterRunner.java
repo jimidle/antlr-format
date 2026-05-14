@@ -8,9 +8,16 @@ import java.nio.file.Path;
 /** Tiny runner used as a bridge until the dedicated CLI project is added. */
 public final class FormatterRunner {
 
+    /** Prevents instantiation of the utility runner. */
     private FormatterRunner() {
     }
 
+    /**
+     * Formats the grammar file supplied on the command line and writes the result to standard output.
+     *
+     * @param args a single path to the grammar file to format
+     * @throws IOException if the input file cannot be read
+     */
     public static void main(String[] args) throws IOException {
         if (args.length != 1) {
             System.err.println("Usage: FormatterRunner <grammar-file>");

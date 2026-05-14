@@ -8,9 +8,16 @@ import ws.idle.antlr.formatter.lexer.ANTLRv4Lexer;
 
 final class FormatterComments {
 
+    /** Prevents instantiation of the utility class. */
     private FormatterComments() {
     }
 
+    /**
+     * Serializes formatting options into one or more {@code $antlr-format} line comments.
+     *
+     * @param options the options to serialize
+     * @return the generated formatter comment block, including surrounding blank lines
+     */
     static String convertToComment(FormattingOptions options) {
         List<String> entries = new ArrayList<>();
         append(entries, "disabled", options.disabled);
@@ -66,6 +73,14 @@ final class FormatterComments {
         return "\n" + String.join("\n", lines) + "\n\n";
     }
 
+    /**
+     * Computes the rendered width of text, taking tab expansion into account.
+     *
+     * @param text the text to measure
+     * @param tabWidth the configured tab width
+     * @param currentColumn the column at which the text will start
+     * @return the number of columns occupied by the text
+     */
     static int computeLineLength(String text, int tabWidth, int currentColumn) {
         int length = 0;
         for (char ch : text.toCharArray()) {
@@ -79,6 +94,16 @@ final class FormatterComments {
         return length;
     }
 
+    /**
+     * Reflows a line, block, or doc comment to fit within the configured column limit.
+     *
+     * @param comment the original comment text
+     * @param type the lexer token type describing the comment kind
+     * @param options the active formatting options
+     * @param currentColumn the current output column before the comment is emitted
+     * @param currentIndentation the current indentation depth
+     * @return the reformatted comment text
+     */
     static String reflowComment(String comment, int type, FormattingOptions options, int currentColumn,
                                 int currentIndentation) {
         List<String> result = new ArrayList<>();
@@ -162,12 +187,25 @@ final class FormatterComments {
         return String.join("\n" + indentation, result);
     }
 
+    /**
+     * Splits a comment line into whitespace-delimited words.
+     *
+     * @param line the line to split
+     * @return the non-empty words from the line
+     */
     private static List<String> splitWords(String line) {
         return Arrays.stream(line.split("[ \\t]"))
             .filter(entry -> !entry.isEmpty())
             .collect(Collectors.toCollection(ArrayList::new));
     }
 
+    /**
+     * Adds a key/value formatter option entry when the value is present.
+     *
+     * @param entries the destination list
+     * @param key the option name
+     * @param value the option value
+     */
     private static void append(List<String> entries, String key, Object value) {
         if (value != null) {
             entries.add(key + " " + value);

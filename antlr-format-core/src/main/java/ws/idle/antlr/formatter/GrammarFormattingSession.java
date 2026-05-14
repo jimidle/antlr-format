@@ -43,11 +43,25 @@ final class GrammarFormattingSession {
     private record BlockInfo(boolean containsAlts, int singleLineLength) {
     }
 
+    /**
+     * Creates a stateful formatting session for a specific token stream.
+     *
+     * @param tokenStream the token stream being formatted
+     * @param addOptionsAsComment whether the effective options should be emitted as a formatter comment
+     */
     GrammarFormattingSession(FormatterTokenStream tokenStream, boolean addOptionsAsComment) {
         this.tokenStream = tokenStream;
         this.addOptionsAsComment = addOptionsAsComment;
     }
 
+    /**
+     * Formats the configured token stream within the requested source range.
+     *
+     * @param formattingOptions the caller-supplied formatting options
+     * @param start the inclusive source character index to begin formatting from
+     * @param stop the inclusive source character index to stop formatting at
+     * @return the formatted text and the adjusted replacement range
+     */
     FormattingResult format(FormattingOptions formattingOptions, Integer start, Integer stop) {
         if (tokenStream.isEmpty() || Boolean.TRUE.equals(formattingOptions.disabled)) {
             return new FormattingResult("", -1, -1);
@@ -809,6 +823,11 @@ final class GrammarFormattingSession {
         return new FormattingResult(result.toString(), targetStart, targetStop);
     }
 
+    /**
+     * Initializes the effective option set by merging caller-supplied values over the defaults.
+     *
+     * @param formattingOptions the caller-supplied options
+     */
     private void initializeOptions(FormattingOptions formattingOptions) {
         options = FormattingOptions.defaults();
         options.mergeFrom(formattingOptions);
@@ -817,6 +836,7 @@ final class GrammarFormattingSession {
         }
     }
 
+    /** Resets all mutable formatter session state before a new formatting pass begins. */
     private void initializeSessionState() {
         outputPipeline = new ArrayList<>();
         currentIndentation = 0;
@@ -832,6 +852,13 @@ final class GrammarFormattingSession {
         containsFormattingOptions = false;
     }
 
+    /**
+     * Tests whether an output-pipeline entry matches a logical marker or token type.
+     *
+     * @param index the pipeline index to inspect
+     * @param marker the logical marker or token type to match
+     * @return {@code true} when the entry matches
+     */
     private boolean entryIs(int index, int marker) {
         if (index < 0 || index >= outputPipeline.size()) {
             return false;
@@ -850,10 +877,21 @@ final class GrammarFormattingSession {
         };
     }
 
+    /**
+     * Tests whether the most recent output-pipeline entry matches the requested marker.
+     *
+     * @param marker the marker or token type to match
+     * @return {@code true} when the last entry matches
+     */
     private boolean lastEntryIs(int marker) {
         return entryIs(outputPipeline.size() - 1, marker);
     }
 
+    /**
+     * Determines whether the current output line already contains non-whitespace content.
+     *
+     * @return {@code true} when the current line contains output other than indentation
+     */
     private boolean lineHasLeadingNonWhitespaceContent() {
         int index = outputPipeline.size();
         while (--index > 0) {
@@ -865,6 +903,11 @@ final class GrammarFormattingSession {
         return index > 0 && outputPipeline.get(index) != MARKER_LINE_BREAK;
     }
 
+    /**
+     * Checks whether the last significant emitted token was a left parenthesis.
+     *
+     * @return {@code true} when the last significant token is {@code (}
+     */
     private boolean lastCodeTokenIsLeftParen() {
         int i = outputPipeline.size() - 1;
         while (i >= 0) {
@@ -879,6 +922,11 @@ final class GrammarFormattingSession {
         return i >= 0 && outputPipeline.get(i) >= 0 && tokenType(outputPipeline.get(i)) == ANTLRv4Lexer.LPAREN;
     }
 
+    /**
+     * Checks whether the last significant emitted token was a line comment.
+     *
+     * @return {@code true} when the last significant token is a line comment
+     */
     private boolean lastRealTokenIsLineComment() {
         int i = outputPipeline.size() - 1;
         while (i >= 0) {
@@ -892,6 +940,7 @@ final class GrammarFormattingSession {
         return i >= 0 && outputPipeline.get(i) >= 0 && tokenType(outputPipeline.get(i)) == ANTLRv4Lexer.LINE_COMMENT;
     }
 
+    /** Removes the most recently emitted pipeline entry and updates line/column bookkeeping. */
     private void removeLastEntry() {
         if (formattingDisabled || outputPipeline.isEmpty()) {
             return;
@@ -914,6 +963,7 @@ final class GrammarFormattingSession {
         }
     }
 
+    /** Removes trailing spaces and tabs from the output pipeline. */
     private void removeTrailingTabsAndSpaces() {
         if (formattingDisabled) {
             return;
@@ -923,6 +973,7 @@ final class GrammarFormattingSession {
         }
     }
 
+    /** Removes trailing whitespace and whitespace-eraser markers from the output pipeline. */
     private void removeTrailingWhitespaces() {
         if (formattingDisabled) {
             return;
@@ -932,6 +983,11 @@ final class GrammarFormattingSession {
         }
     }
 
+    /**
+     * Emits the current indentation using spaces or tabs according to the active options.
+     *
+     * @param force whether indentation should be emitted even inside a single-line block
+     */
     private void pushCurrentIndentation(boolean force) {
         if (formattingDisabled || (!force && singleLineBlockNesting > 0)) {
             return;
@@ -950,6 +1006,7 @@ final class GrammarFormattingSession {
         }
     }
 
+    /** Emits a continuation line break plus continuation indentation. */
     private void applyLineContinuation() {
         while (lastEntryIs(MARKER_SPACE) || lastEntryIs(MARKER_TAB)) {
             removeLastEntry();
@@ -970,6 +1027,11 @@ final class GrammarFormattingSession {
         currentColumn += options.continuationIndentWidth;
     }
 
+    /**
+     * Adds a marker or token reference to the output pipeline and updates rendered position tracking.
+     *
+     * @param marker the output marker or token index to append
+     */
     private void add(int marker) {
         if (formattingDisabled) {
             return;
@@ -1015,14 +1077,33 @@ final class GrammarFormattingSession {
         }
     }
 
+    /**
+     * Converts a source character index into a token index.
+     *
+     * @param charIndex the source character index
+     * @param first whether to bias toward the first token on the matched line
+     * @return the resolved token index
+     */
     private int tokenFromIndex(int charIndex, boolean first) {
         return tokenStream.tokenIndexForCharIndex(charIndex, first);
     }
 
+    /**
+     * Computes the rendered width of text starting from the current output column.
+     *
+     * @param text the text to measure
+     * @return the number of rendered columns occupied by the text
+     */
     private int computeLineLength(String text) {
         return FormatterComments.computeLineLength(text, options.tabWidth, currentColumn);
     }
 
+    /**
+     * Adds an unformatted source slice to the output pipeline as a preserved raw range.
+     *
+     * @param start the starting token index
+     * @param stop the ending token index
+     */
     private void addRaw(int start, int stop) {
         String text = tokenStream.sourceSlice(tokenStart(start), tokenStop(stop));
         if (text.contains("\n")) {
@@ -1036,12 +1117,18 @@ final class GrammarFormattingSession {
         outputPipeline.add(MARKER_RANGE - currentRangeIndex++);
     }
 
+    /** Emits a single space when spacing is currently allowed. */
     private void addSpace() {
         if (!outputPipeline.isEmpty() && !lastEntryIs(MARKER_SPACE) && !lastEntryIs(ANTLRv4Lexer.LINE_COMMENT)) {
             add(MARKER_SPACE);
         }
     }
 
+    /**
+     * Emits a line break unless the formatter is intentionally keeping the current construct on one line.
+     *
+     * @param force whether the line break must be emitted even inside a single-line block
+     */
     private void addLineBreak(boolean force) {
         if (singleLineBlockNesting == 0 || force) {
             while (lastEntryIs(MARKER_SPACE) || lastEntryIs(MARKER_TAB)) {
@@ -1051,6 +1138,7 @@ final class GrammarFormattingSession {
         }
     }
 
+    /** Ensures the configured minimum number of empty lines after top-level constructs. */
     private void ensureMinEmptyLines() {
         if (formattingDisabled) {
             return;
@@ -1076,6 +1164,13 @@ final class GrammarFormattingSession {
         }
     }
 
+    /**
+     * Estimates whether a block can stay on one line and whether it contains alternations.
+     *
+     * @param i the token index at which the block starts
+     * @param stoppers token types that terminate the inspected block
+     * @return summary information for the inspected block
+     */
     private BlockInfo getBlockInfo(int i, Set<Integer> stoppers) {
         boolean containsAlts = false;
         int singleLineLength = 1;
@@ -1145,6 +1240,14 @@ final class GrammarFormattingSession {
         return new BlockInfo(containsAlts, singleLineLength);
     }
 
+    /**
+     * Finalizes block-info calculation after a stopper token has been encountered.
+     *
+     * @param containsAlts whether the block contains alternations
+     * @param singleLineLength the accumulated single-line length estimate
+     * @param i the current token index
+     * @return finalized block information
+     */
     private BlockInfo finalizeBlockInfo(boolean containsAlts, int singleLineLength, int i) {
         while (++i < tokenCount() && tokenType(i) == ANTLRv4Lexer.WS) {
             if (tokenText(tokenAt(i)).contains("\n")) {
@@ -1157,6 +1260,12 @@ final class GrammarFormattingSession {
         return new BlockInfo(containsAlts, singleLineLength);
     }
 
+    /**
+     * Determines whether a token such as a colon, comma, or trailer should be followed by a line break.
+     *
+     * @param i the token index whose following context should be inspected
+     * @return {@code true} when the following context requires a line break
+     */
     private boolean requiresLineBreakAfterTrailer(int i) {
         if (tokenType(++i) == ANTLRv4Lexer.WS) {
             if (tokenText(tokenAt(i)).contains("\n")) {
@@ -1169,6 +1278,11 @@ final class GrammarFormattingSession {
             && tokenType(i) != ANTLRv4Lexer.LPAREN;
     }
 
+    /**
+     * Parses and applies any formatter directives embedded in a comment token.
+     *
+     * @param index the token index containing the comment to inspect
+     */
     private void processFormattingCommands(int index) {
         FormatterDirectiveParser.ParseResult parseResult = FormatterDirectiveParser.parse(tokenText(tokenAt(index)));
         if (!parseResult.containsFormattingOptions()) {
@@ -1201,6 +1315,12 @@ final class GrammarFormattingSession {
         }
     }
 
+    /**
+     * Applies a parsed boolean formatter option.
+     *
+     * @param key the option name
+     * @param value the parsed boolean value
+     */
     private void setBooleanOption(String key, boolean value) {
         switch (key) {
             case "alignTrailingComments" -> {
@@ -1246,6 +1366,12 @@ final class GrammarFormattingSession {
         }
     }
 
+    /**
+     * Applies a parsed integer formatter option.
+     *
+     * @param key the option name
+     * @param value the parsed integer value
+     */
     private void setIntOption(String key, int value) {
         switch (key) {
             case "columnLimit" -> options.columnLimit = value;
@@ -1258,22 +1384,39 @@ final class GrammarFormattingSession {
         }
     }
 
+    /**
+     * Resets tracked alignment state for the supplied alignment types.
+     *
+     * @param types the alignment types to reset
+     */
     private void resetAlignmentStatus(FormatterAlignmentType... types) {
         alignments.reset(types);
     }
 
+    /**
+     * Adds an alignment marker for the current output position.
+     *
+     * @param type the alignment family to record
+     */
     private void addAlignmentEntry(FormatterAlignmentType type) {
         alignments.addEntry(type, currentLine, lineHasLeadingNonWhitespaceContent(),
             Boolean.TRUE.equals(options.groupedAlignments), outputPipeline, this::removeTrailingTabsAndSpaces,
             MARKER_ALIGNMENT);
     }
 
+    /** Resolves all pending alignment markers into concrete whitespace. */
     private void computeAlignments() {
         alignments.compute(outputPipeline, whitespaceList, options, this::columnForEntry, this::entryIs,
             MARKER_WHITESPACE_BLOCK, MARKER_WHITESPACE, MARKER_WHITESPACE_ERASER, MARKER_SPACE,
             ANTLRv4Lexer.LPAREN, ANTLRv4Lexer.COLON);
     }
 
+    /**
+     * Computes the rendered column immediately before a stored output-pipeline entry.
+     *
+     * @param offset the pipeline index to measure up to
+     * @return the rendered column
+     */
     private int columnForEntry(int offset) {
         int result = 0;
         int run = offset;
@@ -1316,46 +1459,112 @@ final class GrammarFormattingSession {
         return result;
     }
 
+    /**
+     * Reflows a comment using the current formatter state.
+     *
+     * @param comment the raw comment text
+     * @param type the lexer token type for the comment
+     * @return the reformatted comment text
+     */
     private String reflowComment(String comment, int type) {
         return FormatterComments.reflowComment(comment, type, options, currentColumn, currentIndentation);
     }
 
+    /**
+     * Tests whether the given marker refers to a preserved raw source range.
+     *
+     * @param marker the marker to inspect
+     * @return {@code true} when the marker is a range marker
+     */
     private boolean isRangeBlock(int marker) {
         return marker <= MARKER_RANGE && marker > MARKER_ALIGNMENT;
     }
 
+    /**
+     * Tests whether the given marker refers to a computed whitespace block.
+     *
+     * @param marker the marker to inspect
+     * @return {@code true} when the marker is a whitespace block marker
+     */
     private boolean isWhitespaceBlock(int marker) {
         return marker <= MARKER_WHITESPACE_BLOCK;
     }
 
+    /**
+     * Returns the token type for the token at the supplied index.
+     *
+     * @param index the token index
+     * @return the token type
+     */
     private int tokenType(int index) {
         return tokenStream.type(index);
     }
 
+    /**
+     * Returns the source line for the token at the supplied index.
+     *
+     * @param index the token index
+     * @return the 1-based token line
+     */
     private int tokenLine(int index) {
         return tokenStream.line(index);
     }
 
+    /**
+     * Returns the source column for the token at the supplied index.
+     *
+     * @param index the token index
+     * @return the 0-based token column
+     */
     private int tokenColumn(int index) {
         return tokenStream.column(index);
     }
 
+    /**
+     * Returns the inclusive source start index for the token at the supplied index.
+     *
+     * @param index the token index
+     * @return the inclusive token start index
+     */
     private int tokenStart(int index) {
         return tokenStream.start(index);
     }
 
+    /**
+     * Returns the inclusive source stop index for the token at the supplied index.
+     *
+     * @param index the token index
+     * @return the inclusive token stop index
+     */
     private int tokenStop(int index) {
         return tokenStream.stop(index);
     }
 
+    /**
+     * Safely returns token text for a token.
+     *
+     * @param token the token to inspect
+     * @return the token text or an empty string
+     */
     private static String tokenText(Token token) {
         return FormatterTokenStream.text(token);
     }
 
+    /**
+     * Returns the token at the supplied index.
+     *
+     * @param index the token index
+     * @return the token at that index
+     */
     private Token tokenAt(int index) {
         return tokenStream.token(index);
     }
 
+    /**
+     * Returns the number of tokens in the underlying token stream.
+     *
+     * @return the token count
+     */
     private int tokenCount() {
         return tokenStream.size();
     }
