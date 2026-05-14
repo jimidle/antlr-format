@@ -33,12 +33,31 @@ class AntlrFormatMojoTest {
         mojo.execute();
 
         String actual = Files.readString(grammar, StandardCharsets.UTF_8);
-        assertEquals(expectedFormatting(), actual);
+        assertEquals(expectedFormattingForFile(), actual);
+    }
+
+    @Test
+    void addsTrailingSystemNewlineWhenFormattingIsOtherwiseStable() throws Exception {
+        Path grammar = writeGrammar(expectedFormatting().stripTrailing());
+        AntlrFormatMojo mojo = configuredMojo(tempDir);
+
+        mojo.execute();
+
+        String actual = Files.readString(grammar, StandardCharsets.UTF_8);
+        assertEquals(expectedFormattingForFile(), actual);
+        assertTrue(actual.endsWith(System.lineSeparator()));
+    }
+
+    @Test
+    void normalizesWrittenFilesToTheConfiguredLineSeparator() {
+        String normalized = AntlrFormatMojo.normalizeForFileWrite("grammar Demo;\na: 'a';", "\r\n");
+
+        assertEquals("grammar Demo;\r\na: 'a';\r\n", normalized);
     }
 
     @Test
     void dryRunLeavesSourceUnchanged() throws Exception {
-        Path grammar = writeGrammar();
+        Path grammar = writeGrammar(UNFORMATTED_GRAMMAR);
         AntlrFormatMojo mojo = configuredMojo(tempDir);
         setField(mojo, "dryRun", true);
 
@@ -49,7 +68,7 @@ class AntlrFormatMojoTest {
 
     @Test
     void excludesPreventFormatting() throws Exception {
-        Path grammar = writeGrammar();
+        Path grammar = writeGrammar(UNFORMATTED_GRAMMAR);
         AntlrFormatMojo mojo = configuredMojo(tempDir);
         setField(mojo, "excludes", List.of("nested/**"));
 
@@ -60,7 +79,7 @@ class AntlrFormatMojoTest {
 
     @Test
     void invalidEncodingFailsClearly() throws Exception {
-        writeGrammar();
+        writeGrammar(UNFORMATTED_GRAMMAR);
         AntlrFormatMojo mojo = configuredMojo(tempDir);
         setField(mojo, "encoding", "definitely-not-a-charset");
 
@@ -77,15 +96,23 @@ class AntlrFormatMojoTest {
     }
 
     private Path writeGrammar() throws IOException {
+        return writeGrammar(UNFORMATTED_GRAMMAR);
+    }
+
+    private Path writeGrammar(String text) throws IOException {
         Path file = tempDir.resolve(RELATIVE_GRAMMAR_PATH);
         Files.createDirectories(file.getParent());
-        return Files.writeString(file, UNFORMATTED_GRAMMAR, StandardCharsets.UTF_8);
+        return Files.writeString(file, text, StandardCharsets.UTF_8);
     }
 
     private String expectedFormatting() {
         FormattingConfiguration configuration = new FormattingConfiguration();
         configuration.main = new FormattingOptions();
         return new AntlrFormatterService().format(UNFORMATTED_GRAMMAR, configuration, false, 0, Integer.MAX_VALUE).text();
+    }
+
+    private String expectedFormattingForFile() {
+        return AntlrFormatMojo.normalizeForFileWrite(expectedFormatting(), System.lineSeparator());
     }
 
     private static void setField(Object target, String name, Object value) throws Exception {
