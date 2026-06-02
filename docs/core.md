@@ -9,7 +9,7 @@ It is the right dependency when you want to format ANTLR grammars from your own 
 <dependency>
   <groupId>ws.idle</groupId>
   <artifactId>antlr-format-core</artifactId>
-  <version>1.0.2</version>
+  <version>1.0.3</version>
 </dependency>
 ```
 
@@ -73,4 +73,3 @@ For the full directive vocabulary and option semantics, see:
 
 - CLI guide: [`cli.md`](cli.md)
 - Maven plugin guide: [`maven-plugin.md`](maven-plugin.md)
-
