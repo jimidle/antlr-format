@@ -42,8 +42,8 @@ mvn -B --no-transfer-progress -pl antlr-format-cli -am package
 The CLI module produces these archives:
 
 ```text
-antlr-format-cli/target/antlr-format-cli-1.0.2.zip
-antlr-format-cli/target/antlr-format-cli-1.0.2.tar.gz
+antlr-format-cli/target/antlr-format-cli-1.0.3.zip
+antlr-format-cli/target/antlr-format-cli-1.0.3.tar.gz
 ```
 
 ## Distribution layout
@@ -56,7 +56,7 @@ bin/
   antlr-format.cmd
   antlr-format.ps1
 lib/
-  antlr-format-cli-1.0.2.jar
+  antlr-format-cli-1.0.3.jar
 completions/
   antlr-format.bash
   _antlr-format
@@ -96,16 +96,16 @@ The checked-in template already includes:
 ## Published formula source
 
 The tap formula downloads versioned CLI archives from GitHub releases in the main project repository.
-For the `1.0.2` release, the tarball URL is:
+For the `1.0.3` release, the tarball URL is:
 
 ```text
-https://github.com/jimidle/antlr-format/releases/download/v1.0.2/antlr-format-cli-1.0.2.tar.gz
+https://github.com/jimidle/antlr-format/releases/download/v1.0.3/antlr-format-cli-1.0.3.tar.gz
 ```
 
 with SHA-256:
 
 ```text
-03fdf17f2ba7edb2f68e710695a145096394fc475de71bbefa5c1b2346fa5335
+22e9ae61805dec6ef5dafbcd076fb719ff2825f6eacbc68c4a383497fcab3c94
 ```
 
 ## Release maintenance checklist
@@ -130,7 +130,7 @@ For future CLI releases:
 
 This repository provides the build inputs used by the published Homebrew tap:
 
-- a stable release version (`1.0.2`)
+- a stable release version (`1.0.3`)
 - installable wrapper scripts
 - generated shell completions
 - a consistent archive layout that the tap formula can install without repackaging

@@ -8,7 +8,7 @@ The `antlr-format-maven-plugin` module formats ANTLR grammars in place from Mave
 <plugin>
   <groupId>ws.idle</groupId>
   <artifactId>antlr-format-maven-plugin</artifactId>
-  <version>1.0.2</version>
+  <version>1.0.3</version>
   <executions>
     <execution>
       <goals>
@@ -125,4 +125,3 @@ mvn -B --no-transfer-progress antlr-format:format -Dantlr-format.dryRun=true
 - [Project README](../README.md)
 - [Command line interface](cli.md)
 - [Formatter directives reference](formatter-directives.md)
-

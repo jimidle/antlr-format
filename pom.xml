@@ -6,7 +6,7 @@
 
     <groupId>ws.idle</groupId>
     <artifactId>antlr-format-parent</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
     <packaging>pom</packaging>
     <name>ANTLR Formatter Parent</name>
     <description>Java implementation of the ANTLR grammar formatter, including a reusable core library, standalone CLI, and Maven plugin.</description>
@@ -38,7 +38,7 @@
         <connection>scm:git:https://github.com/jimidle/antlr-format.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/jimidle/antlr-format.git</developerConnection>
         <url>https://github.com/jimidle/antlr-format</url>
-        <tag>v1.0.2</tag>
+        <tag>v1.0.3</tag>
     </scm>
 
     <issueManagement>
