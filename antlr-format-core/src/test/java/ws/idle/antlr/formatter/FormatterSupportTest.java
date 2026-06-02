@@ -59,6 +59,59 @@ class FormatterSupportTest {
     }
 
     @Test
+    void commentHelperReflowIsIdempotentAcrossBlankCommentLines() {
+        FormattingOptions options = FormattingOptions.defaults();
+        options.columnLimit = 18;
+
+        String comment = "// alpha beta gamma\n//\n// delta epsilon";
+
+        String first = FormatterComments.reflowComment(comment, ANTLRv4Lexer.LINE_COMMENT, options, 0, 0);
+        String second = FormatterComments.reflowComment(first, ANTLRv4Lexer.LINE_COMMENT, options, 0, 0);
+
+        assertEquals("// alpha beta\n// gamma\n// \n// delta epsilon", first);
+        assertEquals(first, second);
+    }
+
+    @Test
+    void commentHelperPreservesSingleWordAndListLikeLinesDuringReflow() {
+        FormattingOptions options = FormattingOptions.defaults();
+        options.columnLimit = 16;
+
+        String comment = "// heading\n// alpha beta gamma delta\n// - bullet item\n// value";
+        String reflowed = FormatterComments.reflowComment(comment, ANTLRv4Lexer.LINE_COMMENT, options, 0, 0);
+
+        assertEquals("// heading\n// alpha beta\n// gamma delta\n// - bullet item\n// value", reflowed);
+    }
+
+    @Test
+    void commentHelperIgnoresPhysicalTrailingNewlinesDuringReflow() {
+        FormattingOptions options = FormattingOptions.defaults();
+        options.columnLimit = 18;
+
+        String comment = "// alpha beta gamma\n// delta epsilon\n";
+
+        String reflowed = FormatterComments.reflowComment(comment, ANTLRv4Lexer.LINE_COMMENT, options, 0, 0);
+        String second = FormatterComments.reflowComment(reflowed + "\n", ANTLRv4Lexer.LINE_COMMENT, options, 0, 0);
+
+        assertEquals("// alpha beta\n// gamma delta\n// epsilon", reflowed);
+        assertEquals(reflowed, second);
+    }
+
+    @Test
+    void commentHelperReflowsNestedCommentMarkersWithoutBreakingIdempotence() {
+        FormattingOptions options = FormattingOptions.defaults();
+        options.columnLimit = 40;
+
+        String comment = "//GRAMMAR_SELECTOR_EXPR:;               // synthetic token: starts single expr.\n"
+            + "//GRAMMAR_SELECTOR_GCOL:;               // synthetic token: starts generated col.";
+
+        String first = FormatterComments.reflowComment(comment, ANTLRv4Lexer.LINE_COMMENT, options, 0, 0);
+        String second = FormatterComments.reflowComment(first, ANTLRv4Lexer.LINE_COMMENT, options, 0, 0);
+
+        assertEquals(first, second);
+    }
+
+    @Test
     void commentHelperReflowsMultilineBlockCommentsWithIndentation() {
         FormattingOptions options = FormattingOptions.defaults();
         options.columnLimit = 18;
@@ -70,6 +123,31 @@ class FormatterSupportTest {
         assertTrue(reflowed.startsWith("/*"));
         assertTrue(reflowed.contains("\n   * "));
         assertTrue(reflowed.endsWith(" */"));
+    }
+
+    @Test
+    void grammarFormatterKeepsReflowedCommentsStableAcrossPasses() {
+        FormattingOptions options = FormattingOptions.defaults();
+        options.reflowComments = true;
+        options.columnLimit = 24;
+
+        String grammar = """
+            grammar Demo;
+
+            // Heading
+            // this paragraph should wrap without creating a trailing blank comment line
+            // - bullet item
+            // tail
+            rule: 'a';
+            """;
+
+        String first = new GrammarFormatter(grammar).formatGrammar(options).text();
+        String second = new GrammarFormatter(first).formatGrammar(options).text();
+
+        assertEquals(first, second);
+        assertTrue(first.contains("// Heading"));
+        assertTrue(first.contains("// - bullet item"));
+        assertFalse(first.contains("// \nrule:"));
     }
 
     @Test

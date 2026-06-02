@@ -106,85 +106,238 @@ final class FormatterComments {
      */
     static String reflowComment(String comment, int type, FormattingOptions options, int currentColumn,
                                 int currentIndentation) {
-        List<String> result = new ArrayList<>();
-        String lineIntroducer = type == ANTLRv4Lexer.LINE_COMMENT ? "// " : " * ";
-        List<String> lines = new ArrayList<>(Arrays.asList(comment.split("\\n", -1)));
-
-        int lineIndex = 0;
-        List<String> pipeline = splitWords(lines.get(lineIndex++));
-        String line;
-        if (type != ANTLRv4Lexer.LINE_COMMENT) {
-            if (!lines.get(1).trim().startsWith("*")) {
-                lineIntroducer = " ";
-            }
-            String last = lines.getLast().trim();
-            last = last.substring(0, Math.max(0, last.length() - 2));
-            if (last.isEmpty()) {
-                lines.removeLast();
-            } else {
-                lines.set(lines.size() - 1, last);
-            }
-        }
-
-        boolean isFirst = false;
-        if (pipeline.size() == 1) {
-            result.add(pipeline.getFirst());
-            line = lineIntroducer;
-            isFirst = true;
-        } else {
-            line = pipeline.getFirst() + " ";
-        }
-
-        int index = 1;
-        int column = computeLineLength(line, options.tabWidth, currentColumn);
-        while (true) {
-            while (index < pipeline.size()) {
-                if (currentColumn + column + pipeline.get(index).length() > options.columnLimit) {
-                    result.add(line.substring(0, line.length() - 1));
-                    line = lineIntroducer;
-                }
-                line += pipeline.get(index++) + " ";
-                column = computeLineLength(line, options.tabWidth, currentColumn);
-            }
-            if (lineIndex == lines.size()) {
-                break;
-            }
-            pipeline = splitWords(lines.get(lineIndex++));
-            index = 0;
-            if (!pipeline.isEmpty()) {
-                String first = pipeline.getFirst();
-                if (type == ANTLRv4Lexer.LINE_COMMENT) {
-                    if ("//".equals(first)) {
-                        pipeline = new ArrayList<>(pipeline.subList(1, pipeline.size()));
-                    } else {
-                        pipeline.set(0, first.substring(2));
-                    }
-                } else if ("*".equals(first)) {
-                    pipeline = new ArrayList<>(pipeline.subList(1, pipeline.size()));
-                } else if (first.startsWith("*")) {
-                    pipeline.set(0, first.substring(1));
-                }
-            }
-            if (pipeline.isEmpty()) {
-                if (!isFirst) {
-                    result.add(line.substring(0, line.length() - 1));
-                }
-                result.add(lineIntroducer);
-                line = lineIntroducer;
-            }
-            isFirst = false;
-        }
-
-        if (!line.isEmpty()) {
-            result.add(line.substring(0, line.length() - 1));
-        }
-        if (type != ANTLRv4Lexer.LINE_COMMENT) {
-            result.add(" */");
-        }
+        List<String> result = type == ANTLRv4Lexer.LINE_COMMENT
+            ? reflowLineComment(comment, options, currentColumn)
+            : reflowBlockComment(comment, options, currentColumn);
         String indentation = Boolean.TRUE.equals(options.useTab)
             ? "\t".repeat(currentIndentation)
             : " ".repeat(currentIndentation * options.indentWidth);
         return String.join("\n" + indentation, result);
+    }
+
+    private static List<String> reflowLineComment(String comment, FormattingOptions options, int currentColumn) {
+        List<String> result = new ArrayList<>();
+        List<String> paragraph = new ArrayList<>();
+        List<String> physicalLines = splitPhysicalLines(comment);
+        String firstParagraphPrefix = extractLineCommentPrefix(physicalLines.getFirst());
+        boolean firstParagraph = true;
+        for (String rawLine : physicalLines) {
+            String firstPrefix = firstParagraph ? firstParagraphPrefix : "// ";
+            String content = stripLineCommentPrefix(rawLine);
+            if (appendCommentContentLine(result, paragraph, content, firstPrefix, "// ", options, currentColumn)) {
+            } else {
+                firstParagraph = false;
+            }
+        }
+        flushParagraph(result, paragraph, firstParagraph ? firstParagraphPrefix : "// ", "// ", options,
+            currentColumn);
+        return result;
+    }
+
+    private static List<String> reflowBlockComment(String comment, FormattingOptions options, int currentColumn) {
+        List<String> lines = Arrays.asList(comment.split("\\n", -1));
+        String opening = extractBlockOpening(lines.getFirst());
+        boolean starPrefixedLines = lines.size() > 1 && lines.get(1).trim().startsWith("*");
+        String lineIntroducer = starPrefixedLines ? " * " : " ";
+
+        List<String> result = new ArrayList<>();
+        List<String> paragraph = new ArrayList<>();
+        String paragraphPrefix = null;
+
+        String firstContent = stripBlockOpeningContent(lines.getFirst());
+        if (firstContent.isEmpty()) {
+            result.add(opening);
+        } else if (shouldPreserveLine(firstContent)) {
+            result.add(opening + " " + firstContent);
+        } else {
+            paragraphPrefix = opening + " ";
+            paragraph.addAll(splitWords(firstContent));
+        }
+
+        for (int index = 1; index < lines.size() - 1; ++index) {
+            flushParagraphIfNeeded(result, paragraph, paragraphPrefix, lineIntroducer, options, currentColumn,
+                lines.get(index), starPrefixedLines);
+            if (paragraph.isEmpty()) {
+                paragraphPrefix = null;
+            }
+            String content = stripBlockBodyContent(lines.get(index), starPrefixedLines);
+            if (appendCommentContentLine(result, paragraph, content,
+                paragraphPrefix == null ? lineIntroducer : paragraphPrefix, lineIntroducer, options, currentColumn)) {
+                paragraphPrefix = paragraphPrefix == null ? lineIntroducer : paragraphPrefix;
+            } else {
+                paragraphPrefix = null;
+            }
+        }
+
+        if (lines.size() > 1) {
+            String lastContent = stripBlockClosingContent(lines.getLast(), starPrefixedLines);
+            if (lastContent.isEmpty()) {
+                flushParagraph(result, paragraph, paragraphPrefix == null ? lineIntroducer : paragraphPrefix,
+                    lineIntroducer, options, currentColumn);
+                paragraphPrefix = null;
+            } else if (appendCommentContentLine(result, paragraph, lastContent,
+                paragraphPrefix == null ? lineIntroducer : paragraphPrefix, lineIntroducer, options,
+                currentColumn)) {
+                paragraphPrefix = paragraphPrefix == null ? lineIntroducer : paragraphPrefix;
+            } else {
+                paragraphPrefix = null;
+            }
+        }
+
+        flushParagraph(result, paragraph, paragraphPrefix == null ? lineIntroducer : paragraphPrefix, lineIntroducer,
+            options, currentColumn);
+        result.add(" */");
+        return result;
+    }
+
+    private static void flushParagraphIfNeeded(List<String> result, List<String> paragraph, String paragraphPrefix,
+                                               String lineIntroducer, FormattingOptions options, int currentColumn,
+                                               String rawLine, boolean starPrefixedLines) {
+        String content = stripBlockBodyContent(rawLine, starPrefixedLines);
+        if (content.isEmpty() || shouldPreserveLine(content)) {
+            flushParagraph(result, paragraph, paragraphPrefix == null ? lineIntroducer : paragraphPrefix,
+                lineIntroducer, options, currentColumn);
+        }
+    }
+
+    private static boolean appendCommentContentLine(List<String> result, List<String> paragraph, String content,
+                                                    String firstPrefix, String continuationPrefix,
+                                                    FormattingOptions options, int currentColumn) {
+        String trimmed = content.trim();
+        if (trimmed.isEmpty()) {
+            flushParagraph(result, paragraph, firstPrefix, continuationPrefix, options, currentColumn);
+            result.add(blankCommentLine(continuationPrefix));
+            return false;
+        }
+        if (shouldPreserveLine(trimmed)) {
+            flushParagraph(result, paragraph, firstPrefix, continuationPrefix, options, currentColumn);
+            result.add(continuationPrefix + trimmed);
+            return false;
+        }
+
+        paragraph.addAll(splitWords(trimmed));
+        return true;
+    }
+
+    private static void flushParagraph(List<String> result, List<String> paragraph, String firstPrefix,
+                                       String continuationPrefix, FormattingOptions options, int currentColumn) {
+        if (paragraph.isEmpty()) {
+            return;
+        }
+
+        String prefix = firstPrefix;
+        StringBuilder line = new StringBuilder(prefix);
+        for (String word : paragraph) {
+            boolean hasContent = line.length() > prefix.length();
+            int currentWidth = computeLineLength(line.toString(), options.tabWidth, currentColumn);
+            if (hasContent && currentColumn + currentWidth + word.length() > options.columnLimit) {
+                result.add(trimTrailingWhitespace(line.toString()));
+                prefix = continuationPrefix;
+                line = new StringBuilder(prefix);
+            }
+            line.append(word).append(' ');
+        }
+
+        result.add(trimTrailingWhitespace(line.toString()));
+        paragraph.clear();
+    }
+
+    private static String stripLineCommentPrefix(String line) {
+        String trimmed = line.trim();
+        if (trimmed.startsWith("//")) {
+            return trimmed.substring(2).trim();
+        }
+        return trimmed;
+    }
+
+    private static String extractLineCommentPrefix(String line) {
+        String trimmed = line.trim();
+        if (trimmed.startsWith("//") && trimmed.length() > 2 && !Character.isWhitespace(trimmed.charAt(2))) {
+            return "//";
+        }
+        return "// ";
+    }
+
+    private static String extractBlockOpening(String line) {
+        String trimmed = line.trim();
+        if (trimmed.startsWith("/**")) {
+            return "/**";
+        }
+        return "/*";
+    }
+
+    private static String stripBlockOpeningContent(String line) {
+        String trimmed = line.trim();
+        if (trimmed.startsWith("/**")) {
+            return trimmed.substring(3).trim();
+        }
+        if (trimmed.startsWith("/*")) {
+            return trimmed.substring(2).trim();
+        }
+        return trimmed;
+    }
+
+    private static String stripBlockBodyContent(String line, boolean starPrefixedLines) {
+        String trimmed = line.trim();
+        if (trimmed.startsWith("*")) {
+            return trimmed.substring(1).trim();
+        }
+        return trimmed;
+    }
+
+    private static String stripBlockClosingContent(String line, boolean starPrefixedLines) {
+        String withoutClosing = line;
+        int closingIndex = withoutClosing.lastIndexOf("*/");
+        if (closingIndex >= 0) {
+            withoutClosing = withoutClosing.substring(0, closingIndex);
+        }
+        return stripBlockBodyContent(withoutClosing, starPrefixedLines);
+    }
+
+    private static String blankCommentLine(String prefix) {
+        if ("// ".equals(prefix) || " * ".equals(prefix) || " ".equals(prefix)) {
+            return prefix;
+        }
+        if (prefix.endsWith(" ")) {
+            return prefix.substring(0, prefix.length() - 1);
+        }
+        return prefix;
+    }
+
+    private static boolean shouldPreserveLine(String line) {
+        List<String> words = splitWords(line);
+        if (words.size() <= 1) {
+            return true;
+        }
+
+        String trimmed = line.trim();
+        return trimmed.startsWith("-")
+            || trimmed.startsWith("* ")
+            || trimmed.startsWith("+ ")
+            || trimmed.startsWith("• ")
+            || trimmed.startsWith("◦ ")
+            || trimmed.startsWith("‣ ")
+            || trimmed.matches("\\[[ xX]\\]\\s+.*")
+            || trimmed.matches("\\d+[.)]\\s+.*");
+    }
+
+    private static List<String> splitPhysicalLines(String text) {
+        List<String> lines = new ArrayList<>(Arrays.asList(text.split("\\n", -1)));
+        while (!lines.isEmpty() && lines.getLast().isEmpty()) {
+            lines.removeLast();
+        }
+        if (lines.isEmpty()) {
+            lines.add("");
+        }
+        return lines;
+    }
+
+    private static String trimTrailingWhitespace(String text) {
+        int index = text.length();
+        while (index > 0 && Character.isWhitespace(text.charAt(index - 1))) {
+            --index;
+        }
+        return text.substring(0, index);
     }
 
     /**
