@@ -36,6 +36,11 @@ FormattingResult result = formatter.formatGrammar(options);
 String formatted = result.text();
 ```
 
+`FormattingOptions.reflowComments` is the Java API name for comment reflow.
+When enabled, the formatter rewraps ordinary comment paragraphs toward `columnLimit` but preserves structural lines such as
+single-word headings, bullets, checklist entries, and numbered list items.
+Repeated formatter runs are intended to keep the same comment layout instead of appending extra blank comment markers.
+
 ## Format with grammar-kind-aware configuration
 
 ```java

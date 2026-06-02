@@ -100,7 +100,7 @@ The only `FormattingOptions` field intentionally excluded from the table is `dis
 | `indentWidth` | integer | `4` | Number of spaces per indentation level when `useTab` is `off`. |
 | `keepEmptyLinesAtTheStartOfBlocks` | `on` / `off` | `false` | Preserves empty lines at the beginning of blocks instead of collapsing them. |
 | `maxEmptyLinesToKeep` | integer | `1` | Maximum number of consecutive empty lines preserved by the formatter. |
-| `reflowComments` | `on` / `off` | `false` | Rewraps multi-line line comments and block/doc comments to fit within `columnLimit`. |
+| `reflowComments` | `on` / `off` | `false` | Rewraps ordinary multi-line line comments and block/doc comments to fit within `columnLimit`, while preserving structural list-like lines. |
 | `spaceBeforeAssignmentOperators` | `on` / `off` | `true` | Controls whether spaces are inserted before `=` and `+=`. |
 | `tabWidth` | integer | `4` | Visual width used when measuring tabs for alignment and line-length calculations. |
 | `useTab` | `on` / `off` | `false` | Uses tab characters for indentation and alignment blocks instead of spaces. |
@@ -229,17 +229,32 @@ With `off`, hanging behavior is enforced more strictly.
 
 ### `reflowComments`
 
+The option is named `reflowComments` everywhere the formatter exposes it:
+
+- inline grammar directives: `// $antlr-format reflowComments on`
+- Java API: `FormattingOptions.reflowComments`
+- Maven plugin XML: `<reflowComments>true</reflowComments>`
+- CLI flag: `--reflow-comments`
+
 When enabled, the formatter can rewrap:
 
 - grouped line comments
 - block comments
 - doc comments
 
+In practice, reflow is paragraph-oriented. The formatter preserves comment lines that look structural rather than prose, including:
+
+- single-word heading-like lines
+- bullet lines starting with `-`, `*`, `+`, or common Unicode bullet glyphs
+- checklist-style lines such as `[ ] item` or `[x] item`
+- numbered list items such as `1. item` or `2) item`
+
 Caveats:
 
 - reflow only applies when the formatter can treat the comment as ordinary comment text
 - formatter-directive comments themselves are not reflowed into different semantics
 - comment wrapping is influenced by `columnLimit`, `tabWidth`, `useTab`, and current indentation
+- repeated formatting is intended to be idempotent; a trailing physical newline does not cause the formatter to invent an extra trailing `//` line
 
 ### `alignTrailingComments`
 

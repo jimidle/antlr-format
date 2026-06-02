@@ -143,6 +143,9 @@ Boolean options use picocli's negatable form, so they can be turned on with `--o
 | `alignTrailers` | `--[no-]align-trailers` |
 
 The API-only `disabled` field is intentionally not exposed as a CLI flag because inline directives use `on` / `off` control directives instead.
+The comment-reflow option is exposed as `--reflow-comments`, matching `FormattingOptions.reflowComments` and the
+inline `reflowComments` directive spelling. For the detailed preservation and idempotence rules, see
+[`formatter-directives.md`](formatter-directives.md#reflowcomments).
 
 ## Configuration precedence
 

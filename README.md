@@ -128,6 +128,11 @@ FormattingResult result = formatter.formatGrammar(options);
 String formatted = result.text();
 ```
 
+`reflowComments` is the formatter's comment-reflow switch everywhere in the project.
+With it enabled, ordinary comment paragraphs are wrapped toward `columnLimit`, while heading-like single-word lines,
+bullet/list items, and similar structural comment lines are preserved instead of being merged into prose.
+Repeated formatting is intended to remain idempotent.
+
 ### Format with grammar-kind-aware configuration
 
 `AntlrFormatterService` can automatically choose between a main option set and a lexer-specific option set:
@@ -282,8 +287,12 @@ Examples:
 // $antlr-format off
 // $antlr-format on
 // $antlr-format alignLabels on, columnLimit 120
+// $antlr-format reflowComments on
 // $antlr-format reset
 ```
+
+The option name is `reflowComments` in inline directives, the Java API, Maven XML, and the CLI flag set.
+See [`docs/formatter-directives.md`](docs/formatter-directives.md) for the detailed comment-reflow semantics and caveats.
 
 For the complete directive reference, defaults, option interactions, and caveats, see
 [`docs/formatter-directives.md`](docs/formatter-directives.md).
