@@ -78,6 +78,8 @@ That means they accept every formatter option that can be configured inline with
 - `alignTrailers`
 
 For the meaning, defaults, and interactions of those entries, see [`formatter-directives.md`](formatter-directives.md).
+In particular, comment reflow is configured with `<reflowComments>...</reflowComments>`, matching the Java API field
+name and the inline directive vocabulary.
 
 The control directives `on`, `off`, and `reset` are not XML configuration fields because they are grammar-comment commands rather than option properties.
 The API-only `disabled` field is also intentionally outside the inline directive vocabulary.
